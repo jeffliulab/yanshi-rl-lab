@@ -68,13 +68,13 @@ import time
 from importlib.metadata import version
 
 import torch
-
 from rsl_rl.runners import OnPolicyRunner
 
-import isaaclab_tasks  # noqa: F401
 from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent
 from isaaclab.utils.assets import retrieve_file_path
 from isaaclab.utils.dict import print_dict
+
+import isaaclab_tasks  # noqa: F401
 
 # IsaacLab 2.3.2 compatibility: the pretrained-checkpoint module does not
 # exist there; keep the flag but make it fail with a clear message.
@@ -88,6 +88,8 @@ except ModuleNotFoundError:
         )
 
 
+from yanshi_rl_lab.utils.parser_cfg import parse_env_cfg
+
 from isaaclab_rl.rsl_rl import (
     RslRlOnPolicyRunnerCfg,
     RslRlVecEnvWrapper,
@@ -95,9 +97,8 @@ from isaaclab_rl.rsl_rl import (
     export_policy_as_onnx,
     handle_deprecated_rsl_rl_cfg,
 )
-from isaaclab_tasks.utils import get_checkpoint_path
 
-from yanshi_rl_lab.utils.parser_cfg import parse_env_cfg
+from isaaclab_tasks.utils import get_checkpoint_path
 
 
 def main():

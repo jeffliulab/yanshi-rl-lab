@@ -28,3 +28,13 @@ _isaac_sim
 docker/.isaac-lab-docker-history
 # ignore uv environment
 env_isaaclab
+
+# ── yanshi-rl-lab additions ─────────────────────────────────────
+# Fetched vendor assets are never baked into the image (licenses differ,
+# meshes are large); fetch at run time or bind-mount YANSHI_ASSETS_ROOT.
+assets/*
+!assets/registry.py
+!assets/fetch.py
+!assets/README.md
+# Maintainer-local planning/ledger files
+个人用本地私人文档/

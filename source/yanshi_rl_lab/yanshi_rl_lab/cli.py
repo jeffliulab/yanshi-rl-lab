@@ -120,7 +120,9 @@ def _check_nvidia_driver(report: Report) -> None:
             timeout=10,
         )
     except subprocess.TimeoutExpired:
-        report.add("FAIL", "nvidia driver", "nvidia-smi timed out", "driver/GPU in a bad state; reboot or reload the driver")
+        report.add(
+            "FAIL", "nvidia driver", "nvidia-smi timed out", "driver/GPU in a bad state; reboot or reload the driver"
+        )
         return
     if out.returncode != 0:
         report.add("FAIL", "nvidia driver", f"nvidia-smi failed: {out.stderr.strip()}",

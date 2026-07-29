@@ -93,12 +93,11 @@ if args_cli.distributed and version.parse(installed_version) < version.parse(RSL
 import inspect
 import os
 import shutil
-import torch
 from datetime import datetime
 
+import torch
 from rsl_rl.runners import OnPolicyRunner
 
-import isaaclab_tasks  # noqa: F401
 from isaaclab.envs import (
     DirectMARLEnv,
     DirectMARLEnvCfg,
@@ -108,7 +107,10 @@ from isaaclab.envs import (
 )
 from isaaclab.utils.dict import print_dict
 from isaaclab.utils.io import dump_yaml
+
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, handle_deprecated_rsl_rl_cfg
+
+import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 

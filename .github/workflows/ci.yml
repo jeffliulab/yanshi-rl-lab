@@ -1,0 +1,54 @@
+# Copyright (c) 2026 Jeff Liu.
+# SPDX-License-Identifier: MIT
+#
+# CI scope note (honesty over coverage): GitHub-hosted runners cannot install
+# Isaac Sim / Isaac Lab (NVIDIA EULA-gated packages, multi-GB download, GPU
+# required), so training-stack code paths are exercised ONLY on the local
+# workstation. This workflow covers everything that runs on a bare Python:
+#   1. ruff lint (version pinned to match .pre-commit-config.yaml);
+#   2. the pure-Python pytest suite -- tests that need isaaclab/mujoco/
+#      onnxruntime or machine-local archives skip themselves via their own
+#      importorskip / skipif guards (no extra CI-side filtering needed);
+#   3. Yanshi Rank result-JSON schema validation (render_rank.py --check);
+#   4. bilingual README consistency (scripts/tools/check_docs.py:
+#      equal '## ' heading counts + referenced repo paths exist).
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # Keep this pin in lockstep with the ruff-pre-commit rev in
+      # .pre-commit-config.yaml so local hooks and CI agree.
+      - name: Install ruff
+        run: pip install ruff==0.14.10
+      - name: ruff check
+        run: ruff check .
+
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install pure-Python test dependencies
+        # Deliberately NOT the training stack (see the scope note above):
+        # just what the always-on tests import at module level.
+        run: pip install pytest pyyaml numpy
+      - name: pytest (pure-Python subset; Isaac/MuJoCo tests self-skip)
+        run: python -m pytest tests/ -q -rs
+      - name: Yanshi Rank result schema validation
+        run: python benchmark/render_rank.py --check
+      - name: README bilingual parity + referenced-path existence
+        run: python scripts/tools/check_docs.py

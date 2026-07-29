@@ -18,6 +18,7 @@ from collections.abc import Sequence
 from dataclasses import MISSING
 
 import torch
+
 from isaaclab.envs.mdp import UniformVelocityCommandCfg
 from isaaclab.envs.mdp.commands.velocity_command import UniformVelocityCommand
 from isaaclab.utils import configclass

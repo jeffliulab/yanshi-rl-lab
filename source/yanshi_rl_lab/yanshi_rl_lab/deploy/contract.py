@@ -202,7 +202,7 @@ class ContractV2:
         )
 
     @classmethod
-    def from_json_dict(cls, d: dict) -> "ContractV2":
+    def from_json_dict(cls, d: dict) -> ContractV2:
         version = d.get("schema_version")
         if version != SCHEMA_VERSION:
             raise ValueError(
@@ -253,7 +253,7 @@ class ContractV2:
         )
 
     @classmethod
-    def from_json(cls, path) -> "ContractV2":
+    def from_json(cls, path) -> ContractV2:
         return cls.from_json_dict(json.loads(Path(path).read_text(encoding="utf-8")))
 
     # ---------------------------------------------------------- validation

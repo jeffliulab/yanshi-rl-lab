@@ -10,6 +10,7 @@
 # can load the ``play_env_cfg_entry_point`` config of a task.
 
 from isaaclab.envs import DirectRLEnvCfg, ManagerBasedRLEnvCfg
+
 from isaaclab_tasks.utils.parse_cfg import load_cfg_from_registry
 
 
