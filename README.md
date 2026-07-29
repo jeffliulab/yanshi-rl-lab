@@ -9,8 +9,13 @@
 
 A vendor-neutral reinforcement learning framework for legged robots: train in
 Isaac Lab, validate in MuJoCo (sim2sim), and compare every robot on the same
-exam paper (**Yanshi Rank**). Named after Yanshi (偃师), the legendary
-artificer who built a walking automaton for King Mu of Zhou.
+exam paper (**Yanshi Rank**).
+
+The name comes from Yanshi (偃师), the legendary artificer who presented King
+Mu of Zhou with an automaton that could walk. Yanshi was not the robot — he
+was the one who taught it to walk. That is exactly what this framework is:
+not any particular robot body, but the artificer's workshop where robot
+bodies — from any vendor — learn to move.
 
 > 🚧 **Under construction (v0.1 in progress).** Launch robots: Unitree G1,
 > AgiBot Lingxi X2, Berkeley Humanoid Lite. This README will be finalized

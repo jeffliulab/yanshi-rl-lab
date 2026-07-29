@@ -8,8 +8,11 @@
 [![Status](https://img.shields.io/badge/status-under_construction-orange.svg)]()
 
 厂商中立的足式机器人强化学习框架：Isaac Lab 训练、MuJoCo 验证（sim2sim）、
-所有机器人考同一张考卷（**Yanshi Rank** 天梯）。名字取自「偃师」——《列子》
-中为周穆王造出会走路偶人的传奇工匠。
+所有机器人考同一张考卷（**Yanshi Rank** 天梯）。
+
+名字取自「偃师」——《列子》中为周穆王献上会走路偶人的传奇工匠。偃师不是
+那个偶人，他是**教偶人走路的人**。这正是本框架的定位：它不是任何一台机器人
+的身体，而是让各家机器人身体学会运动的工匠作坊。
 
 > 🚧 **建设中（v0.1 进行中）。** 首发机器人：宇树 G1、智元灵犀 X2、
 > Berkeley Humanoid Lite。三台全部通过训练与 sim2sim 验收后，本 README
