@@ -1,0 +1,88 @@
+# Copyright (c) 2026 Jeff Liu. MIT License.
+#
+# Acceptance gates: velocity-flat, AgiBot Lingxi X2 (four gates + per-foot veto).
+#
+# PRE-REGISTERED AND FROZEN before any X2 training run exists (M3, 2026-07-29).
+# Changing any number in this file is a change of acceptance criteria: it
+# requires an entry in the maintainer decision ledger BEFORE the run it judges.
+#
+# Line-setting rationale (each gate carries its own note):
+# - X2 (1.3 m-class, 44.8 kg) and G1 (1.32 m, 35.1 kg) are the same size
+#   class, so the straight-walk and slow-walk lines are carried over from the
+#   G1 gate file (velocity-flat-turn.yaml) unchanged.
+# - X2 trains as an EMPTY overlay on the upstream-official command envelope
+#   (wz limited to +-0.2 rad/s, no Turn override -- it has no legacy battle
+#   record to replicate), so G1's wz=0.6 exam points are untrainable commands
+#   here. Both turning gates are therefore examined at wz=0.2, with lines
+#   derived below.
+#
+# RULES (same as all gate files):
+# - Gate lines live ONLY in this file. Code never carries a threshold.
+# - Metrics are necessary conditions only: final acceptance still includes a
+#   human watching continuous video.
+
+schema_version: 1
+task: velocity-flat-x2
+
+protocol:
+  # Seconds each gate runs (deterministic ONNX inference, fixed command).
+  seconds: 8.0
+
+gates:
+  - name: slow_turn_in_place
+    label: "slow turn in place (wz at training cap)"
+    command: {vx: 0.0, vy: 0.0, wz: 0.2}
+    metric: turn_deg
+    threshold: 45.8
+    direction: ">="
+    unit: "deg"
+    baseline_note: >-
+      Derived, no prior X2 baseline exists: ideal net turn is 8 s x 0.2 rad/s
+      = 1.6 rad = 91.7 deg; the line demands 50% of ideal = 0.8 rad = 45.8 deg
+      (M3 pre-registration; 50% chosen because wz=0.2 sits at the training
+      cap where tracking is weakest under the official slow-command
+      curriculum).
+  - name: turn_while_walking
+    label: "turn while walking (wz at training cap)"
+    command: {vx: 0.4, vy: 0.0, wz: 0.2}
+    metric: radius_m
+    threshold: 3.6
+    direction: "<="
+    unit: "m"
+    baseline_note: >-
+      Derived: ideal radius vx/wz = 0.4/0.2 = 2.0 m. The G1 gate allows 1.8x
+      the ideal radius (1.2 m vs 0.667 m ideal at vx=0.4 wz=0.6); the same
+      slack factor gives 2.0 x 1.8 = 3.6 m. G1's absolute 1.2 m line is NOT
+      carried over because it is physically unreachable at wz=0.2 (an exact
+      tracker already turns at 2.0 m radius).
+  - name: walk_no_regression
+    label: "straight walk (no regression)"
+    command: {vx: 0.6, vy: 0.0, wz: 0.0}
+    metric: net_displacement_m
+    threshold: 3.5
+    direction: ">="
+    unit: "m"
+    baseline_note: >-
+      Carried over from the G1 gate file unchanged (same size class; command
+      vx=0.6 is inside X2's official training envelope). G1 references:
+      S2-Exp3 4.23 m, S2-Exp5 aligned package 4.42 m.
+  - name: slow_walk_no_regression
+    label: "slow walk (no regression)"
+    command: {vx: 0.3, vy: 0.0, wz: 0.0}
+    metric: net_displacement_m
+    threshold: 1.45
+    direction: ">="
+    unit: "m"
+    baseline_note: >-
+      Carried over from the G1 gate file unchanged. Note the G1 line was set
+      at 80% of a deadband-handicapped baseline; X2 trains WITHOUT a
+      command deadband, so this line should if anything be easier to clear
+      (ideal displacement 2.4 m).
+
+# Per-foot ground-contact veto: identical to the G1 gate file (the veto
+# guards against reward hacks like a permanently-airborne leg, a failure mode
+# independent of the robot model). If triggered, the whole policy is voided
+# and the gate numbers do not count (exit code 2).
+veto:
+  min_contact_frac: 0.20
+  max_asymmetry: 0.30
