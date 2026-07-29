@@ -64,6 +64,12 @@ def fetch_one(key: str, force: bool = False) -> None:
             # Blob-filtered clone downloads file contents lazily at checkout,
             # so we do not pull the whole mesh history of large vendor repos.
             _run(["git", "clone", "--filter=blob:none", "--no-checkout", repo, str(tmp_repo)])
+            # Sparse checkout: materialize only the sub-paths we need (plus
+            # repo-root files, so the LICENSE text still lands). Vendor repos
+            # like unitree_ros carry meshes for a dozen robots; without this
+            # a checkout would download all of them.
+            if source["paths"] != ["."]:
+                _run(["git", "sparse-checkout", "set", *source["paths"]], cwd=tmp_repo)
             _run(["git", "checkout", commit], cwd=tmp_repo)
 
             for rel in source["paths"]:
