@@ -1,0 +1,99 @@
+# Copyright (c) 2026 Jeff Liu. MIT License.
+#
+# Acceptance gates: velocity-flat, Berkeley Humanoid Lite (humanoid, 22 DoF)
+# (four gates + per-foot veto).
+#
+# PRE-REGISTERED AND FROZEN before any BHL training run exists (M4,
+# 2026-07-29). Changing any number in this file is a change of acceptance
+# criteria: it requires an entry in the maintainer decision ledger BEFORE the
+# run it judges.
+#
+# Line-setting rationale:
+# - BHL is much smaller than G1/X2: straight-leg length (hip-pitch joint
+#   anchor to lowest sole point, zero pose, MuJoCo 3.10 FK on the pinned
+#   vendor MJCFs, 2026-07-29):
+#       BHL 0.450 - 0.040          = 0.410 m
+#       G1  -0.1027 - (-0.7919)   = 0.6892 m
+#       leg ratio = 0.410 / 0.6892 = 0.5949
+#   Displacement lines (absolute metres walked) scale with stride and thus
+#   with leg length, so they are the G1 lines x 0.5949.
+# - Turning lines do NOT scale with leg length: net turn angle (deg) and
+#   turning radius (= commanded vx / wz for an exact tracker) are
+#   size-independent quantities, so both turning gates reuse the X2 wz=0.2
+#   derivations unchanged.
+# - Commands are identical to the X2 gate file (the same exam for every
+#   robot trained on the shared base's official command envelope, which caps
+#   wz at +-0.2; BHL trains as an EMPTY overlay on that envelope).
+#
+# RULES (same as all gate files):
+# - Gate lines live ONLY in this file. Code never carries a threshold.
+# - Metrics are necessary conditions only: final acceptance still includes a
+#   human watching continuous video.
+
+schema_version: 1
+task: velocity-flat-bhl
+
+protocol:
+  # Seconds each gate runs (deterministic ONNX inference, fixed command).
+  seconds: 8.0
+
+gates:
+  - name: slow_turn_in_place
+    label: "slow turn in place (wz at training cap)"
+    command: {vx: 0.0, vy: 0.0, wz: 0.2}
+    metric: turn_deg
+    threshold: 45.8
+    direction: ">="
+    unit: "deg"
+    baseline_note: >-
+      X2 wz=0.2 derivation reused unchanged (angle is size-independent):
+      ideal net turn is 8 s x 0.2 rad/s = 1.6 rad = 91.7 deg; the line
+      demands 50% of ideal = 0.8 rad = 45.8 deg. No prior BHL baseline
+      exists (M4 pre-registration).
+  - name: turn_while_walking
+    label: "turn while walking (wz at training cap)"
+    command: {vx: 0.4, vy: 0.0, wz: 0.2}
+    metric: radius_m
+    threshold: 3.6
+    direction: "<="
+    unit: "m"
+    baseline_note: >-
+      X2 wz=0.2 derivation reused unchanged: ideal radius vx/wz = 0.4/0.2 =
+      2.0 m; G1's 1.8x slack factor gives 2.0 x 1.8 = 3.6 m. The radius of
+      an exact tracker depends only on the commanded vx/wz, not on body
+      size, so this line is deliberately NOT scaled by leg length (scaling
+      it by 0.5949 would demand a 2.14 m radius, only 1.07x the ideal --
+      near-zero slack no robot gets elsewhere).
+  - name: walk_no_regression
+    label: "straight walk (no regression)"
+    command: {vx: 0.6, vy: 0.0, wz: 0.0}
+    metric: net_displacement_m
+    threshold: 2.08
+    direction: ">="
+    unit: "m"
+    baseline_note: >-
+      G1 line scaled by leg ratio: 3.5 m x 0.5949 = 2.082, rounded to
+      2.08 m. Same command vx=0.6 as the G1/X2 gates (inside the training
+      envelope); for BHL that is ~1.5 leg-lengths/s, a proportionally
+      harder ask than G1's ~0.87 -- the scaled line accounts for exactly
+      that. G1 references: S2-Exp3 4.23 m, S2-Exp5 aligned package 4.42 m.
+  - name: slow_walk_no_regression
+    label: "slow walk (no regression)"
+    command: {vx: 0.3, vy: 0.0, wz: 0.0}
+    metric: net_displacement_m
+    threshold: 0.86
+    direction: ">="
+    unit: "m"
+    baseline_note: >-
+      G1 line scaled by leg ratio: 1.45 m x 0.5949 = 0.863, rounded to
+      0.86 m. Note the G1 line was set at 80% of a deadband-handicapped
+      baseline; BHL trains WITHOUT a command deadband (empty overlay), so
+      if anything this line is generous (ideal displacement 2.4 m).
+
+# Per-foot ground-contact veto: identical to the G1/X2 gate files (the veto
+# guards against reward hacks like a permanently-airborne leg, a failure
+# mode independent of the robot model). If triggered, the whole policy is
+# voided and the gate numbers do not count (exit code 2).
+veto:
+  min_contact_frac: 0.20
+  max_asymmetry: 0.30

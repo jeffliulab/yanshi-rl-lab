@@ -20,6 +20,7 @@ commits so repeated runs are no-ops until a pin changes.
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -42,6 +43,31 @@ def _marker(dest_root: Path) -> Path:
     return dest_root / ".fetched"
 
 
+def _apply_symlinks(entry: dict, dest_root: Path) -> None:
+    """Create the relative symlinks a registry entry declares (idempotent).
+
+    Runs on every invocation -- including the "already at pinned commits" skip
+    path -- so adding a symlink to the registry never forces a re-download.
+    Refuses to clobber anything that is not a symlink (a real file there means
+    the upstream layout changed and the registry entry must be revisited).
+    """
+    for spec in entry.get("symlinks", ()):
+        link = dest_root / spec["path"]
+        target = spec["target"]
+        if link.is_symlink():
+            if os.readlink(link) == target:
+                continue
+            link.unlink()  # stale target from an older registry revision
+        elif link.exists():
+            raise FileExistsError(
+                f"{link} exists and is not a symlink; upstream now ships this path "
+                "itself -- drop the symlink entry from registry.py instead."
+            )
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to(target)
+        print(f"[link] {link} -> {target}")
+
+
 def _pins(entry: dict) -> str:
     return "\n".join(f"{s['repo']}@{s['commit']}" for s in entry["sources"]) + "\n"
 
@@ -50,6 +76,7 @@ def fetch_one(key: str, force: bool = False) -> None:
     entry = get(key)
     dest_root = ASSETS_DIR / key
     if not force and _marker(dest_root).exists() and _marker(dest_root).read_text() == _pins(entry):
+        _apply_symlinks(entry, dest_root)  # cheap; keeps links current without re-fetching
         print(f"[skip] {key} already at pinned commits (use --force to re-fetch)")
         return
     if dest_root.exists():
@@ -94,6 +121,7 @@ def fetch_one(key: str, force: bool = False) -> None:
             if not found_license:
                 print(f"[warn] {key}: no LICENSE file found in {repo} -- check upstream manually")
 
+    _apply_symlinks(entry, dest_root)
     _marker(dest_root).write_text(_pins(entry))
     print(f"[done] {key} -> {dest_root}")
 

@@ -18,6 +18,13 @@ in the maintainer decision ledger before changing it.
 # Each entry: "<vendor>/<model>" -> {sources: [...], license: SPDX label}
 # A source copies each of `paths` (relative to the upstream repo root, after
 # checking out `commit`) into assets/<vendor>/<model>/<dest>/.
+#
+# Optional per-entry `symlinks`: relative symlinks fetch.py creates inside
+# assets/<vendor>/<model>/ AFTER copying (and re-ensures on every run, even
+# when the pin marker says "up to date"). Use this when an upstream file
+# references a directory layout the upstream repo itself does not ship --
+# bridging with a link keeps the vendor files byte-identical (project rule:
+# never edit vendor assets).
 ASSETS: dict[str, dict] = {
     "unitree/g1": {
         "license": "BSD-3-Clause",
@@ -61,6 +68,19 @@ ASSETS: dict[str, dict] = {
                 "commit": "fc90fedd008b1e56a22e3c5221548d6b24f49707",  # HEAD @ 2026-07-29
                 "paths": ["."],
                 "dest": ".",
+            },
+        ],
+        "symlinks": [
+            {
+                # The vendor MJCF (mjcf/berkeley_humanoid_lite.xml) declares
+                # meshdir="assets" and references "merged/<name>.stl", but the
+                # repo ships those exact 26 STL files at ../meshes/ instead
+                # (verified 2026-07-29: every referenced basename exists there,
+                # and MuJoCo 3.10 fails to compile without the link). Upstream's
+                # own onshape-export workspace recreates the assets/merged
+                # layout; the published tree alone cannot compile.
+                "path": "data/robots/berkeley_humanoid/berkeley_humanoid_lite/mjcf/assets/merged",
+                "target": "../../meshes",
             },
         ],
     },

@@ -97,8 +97,16 @@ class RobotProfile:
     waist_deviation_joints: list[str]
 
     # -- task-derivable facts --------------------------------------------
-    target_base_height_m: float
-    min_base_height_m: float
+    # ``None`` means "this fact does not exist for this robot", and the task
+    # base then DROPS the corresponding reward/termination term instead of
+    # guessing a number. Concrete case: Berkeley Humanoid Lite's CAD export
+    # puts the root frame at ground level (standing root height ~= -0.04 m,
+    # a fallen pose can read HIGHER than standing), so a root-height reward
+    # target or termination floor is meaningless there -- and the official
+    # BHL training config indeed carries neither term. The fields stay
+    # required (no default): a profile author must write None consciously.
+    target_base_height_m: float | None
+    min_base_height_m: float | None
 
     # -- defaulted fields -------------------------------------------------
     self_collisions: bool = True

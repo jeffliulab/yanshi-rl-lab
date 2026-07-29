@@ -441,16 +441,25 @@ class VelocityEnvCfg(ManagerBasedRLEnvCfg):
 
         # -- rewards: semantic slots ---------------------------------------
         rew = self.rewards
-        rew.joint_deviation_arms.params["asset_cfg"] = SceneEntityCfg(
-            "robot", joint_names=list(profile.arm_deviation_joints)
-        )
-        rew.joint_deviation_waists.params["asset_cfg"] = SceneEntityCfg(
-            "robot", joint_names=list(profile.waist_deviation_joints)
-        )
-        rew.joint_deviation_legs.params["asset_cfg"] = SceneEntityCfg(
-            "robot", joint_names=list(profile.leg_deviation_joints)
-        )
-        rew.base_height.params["target_height"] = profile.target_base_height_m
+        # Deviation slots: an EMPTY list in the profile means "this robot has
+        # no such joint group" (e.g. Berkeley Humanoid Lite has no waist); the
+        # term is dropped (set to None -- the manager skips None terms) rather
+        # than resolved against an empty joint set.
+        for term_name, joints in (
+            ("joint_deviation_arms", profile.arm_deviation_joints),
+            ("joint_deviation_waists", profile.waist_deviation_joints),
+            ("joint_deviation_legs", profile.leg_deviation_joints),
+        ):
+            if joints:
+                getattr(rew, term_name).params["asset_cfg"] = SceneEntityCfg("robot", joint_names=list(joints))
+            else:
+                setattr(rew, term_name, None)
+        # Height facts: None in the profile means the robot's root frame gives
+        # no meaningful height signal (see RobotProfile) -> drop the term.
+        if profile.target_base_height_m is not None:
+            rew.base_height.params["target_height"] = profile.target_base_height_m
+        else:
+            rew.base_height = None
         rew.gait.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=profile.feet_bodies)
         rew.feet_slide.params["asset_cfg"] = SceneEntityCfg("robot", body_names=profile.feet_bodies)
         rew.feet_slide.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=profile.feet_bodies)
@@ -461,7 +470,13 @@ class VelocityEnvCfg(ManagerBasedRLEnvCfg):
         )
 
         # -- terminations ---------------------------------------------------
-        self.terminations.base_height.params["minimum_height"] = profile.min_base_height_m
+        if profile.min_base_height_m is not None:
+            self.terminations.base_height.params["minimum_height"] = profile.min_base_height_m
+        else:
+            # No usable root-height signal on this robot (see RobotProfile);
+            # bad_orientation remains the fall terminator, which is also
+            # exactly what the official BHL config does.
+            self.terminations.base_height = None
 
         # -- general settings (upstream verbatim) ---------------------------
         self.decimation = 4
