@@ -215,6 +215,17 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         inspect.getfile(env_cfg.__class__),
         os.path.join(log_dir, "params", os.path.basename(inspect.getfile(env_cfg.__class__))),
     )
+    # export the schema-v2 deployment contract next to the params dumps.
+    # Wrapped so a broken export warns but never kills a training run (the
+    # contract can be re-dumped later; hours of GPU time cannot).
+    try:
+        from yanshi_rl_lab.deploy.export import export_contract
+
+        contract = export_contract(env.unwrapped, task_name=args_cli.task)
+        contract.to_json(os.path.join(log_dir, "params", "contract.json"))
+        print(f"[INFO] Deployment contract exported to: {os.path.join(log_dir, 'params', 'contract.json')}")
+    except Exception as exc:  # noqa: BLE001 -- deliberately broad, see comment above
+        print(f"[WARN] Deployment-contract export failed (training continues): {exc}")
 
     # run training
     runner.learn(num_learning_iterations=agent_cfg.max_iterations, init_at_random_ep_len=True)

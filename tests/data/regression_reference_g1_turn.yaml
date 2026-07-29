@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Jeff Liu. MIT License.
+#
+# Predecessor-stack MEASURED gate numbers used as the M2 sim2sim regression
+# reference (these are recorded measurements, NOT gate lines -- gate lines
+# live only in benchmark/gates/*.yaml).
+#
+# Sources (read-only predecessor stack, unitree-g1-locomotion):
+# - aligned cell: experiments/1-locomotion/S2-实验5-g1-turn-matrix/EXPERIMENT.md
+#   §8 matrix table (run s2e5-aligned-s42, four gates 4/4, measured with
+#   gate_turn_v2.py on scene_23dof.xml);
+# - onlyw cell: same card §9 + the archived gate output
+#   results/gate_onlyw.txt (run s2e5-onlyw-s42, four gates 4/4).
+#
+# Tolerance: M2 acceptance criterion "per-gate agreement within +/-5%"
+# (yanshi-rl-lab milestone plan / M2 task order, 2026-07-29).
+
+rel_tolerance: 0.05
+
+policies:
+  aligned:
+    # Archived checkpoint cell: s2e5-矩阵五格-最终checkpoint/aligned/policy.onnx
+    gates:
+      turn_in_place: {metric: turn_deg, value: 299.0}
+      turn_while_walking: {metric: radius_m, value: 0.59}
+      walk_no_regression: {metric: net_displacement_m, value: 4.42}
+      slow_walk_no_regression: {metric: net_displacement_m, value: 1.88}
+    all_passed: true
+    veto: false
+  onlyw:
+    # Archived checkpoint cell: s2e5-矩阵五格-最终checkpoint/onlyw/policy.onnx
+    gates:
+      turn_in_place: {metric: turn_deg, value: 279.9}
+      turn_while_walking: {metric: radius_m, value: 0.65}
+      walk_no_regression: {metric: net_displacement_m, value: 4.37}
+      slow_walk_no_regression: {metric: net_displacement_m, value: 2.21}
+    all_passed: true
+    veto: false

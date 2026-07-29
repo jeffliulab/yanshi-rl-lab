@@ -1,0 +1,79 @@
+# Copyright (c) 2026 Jeff Liu. MIT License.
+#
+# Acceptance gates: velocity-flat + turn-in-place (four gates + per-foot veto).
+#
+# Provenance: pre-registered gates of predecessor experiment S2-Exp4
+# (unitree-g1-locomotion, gate_turn_v2.py), FROZEN there before any run and
+# empirically calibrated over the S2-Exp5 five-cell matrix (aligned package
+# passed 4/4 with headline 299 deg; removing the yaw-tracking weight collapsed
+# the headline gate to 6.6 deg). The per-foot contact veto exists because a
+# "one leg permanently airborne" reward hack fooled training curves, batch
+# evaluation AND static frame grabs (v0.45 campaign) -- only continuous video
+# caught it; the veto makes that failure quantitative.
+#
+# RULES:
+# - Gate lines live ONLY in this file. Code never carries a threshold.
+# - Changing any number here is a change of acceptance criteria: it requires
+#   an entry in the maintainer decision ledger BEFORE the run it judges.
+# - Metrics are necessary conditions only: final acceptance still includes a
+#   human watching continuous video.
+
+schema_version: 1
+task: velocity-flat-turn
+
+protocol:
+  # Seconds each gate runs (deterministic ONNX inference, fixed command).
+  seconds: 8.0
+  # Metric names refer to yanshi_rl_lab.deploy.runtime Odometer/DeployLoop
+  # properties; "direction" is ">=" (higher passes) or "<=" (lower passes).
+  # A fall (DeployLoop.fell_at set) fails the gate regardless of the metric.
+
+gates:
+  - name: turn_in_place
+    label: "turn in place"
+    command: {vx: 0.0, vy: 0.0, wz: 0.6}
+    metric: turn_deg
+    threshold: 90.0
+    direction: ">="
+    unit: "deg"
+    baseline_note: >-
+      S2-Exp3 (yaw-range widening only) failed at 23.5 deg; S2-Exp5 aligned
+      package measured 299.0 deg, only-W cell 279.9 deg.
+  - name: turn_while_walking
+    label: "turn while walking"
+    command: {vx: 0.4, vy: 0.0, wz: 0.6}
+    metric: radius_m
+    threshold: 1.2
+    direction: "<="
+    unit: "m"
+    baseline_note: >-
+      S2-Exp3 passed at 0.81 m; S2-Exp5 aligned package 0.59 m.
+  - name: walk_no_regression
+    label: "straight walk (no regression)"
+    command: {vx: 0.6, vy: 0.0, wz: 0.0}
+    metric: net_displacement_m
+    threshold: 3.5
+    direction: ">="
+    unit: "m"
+    baseline_note: >-
+      S2-Exp3 measured 4.23 m; S2-Exp5 aligned package 4.42 m.
+  - name: slow_walk_no_regression
+    label: "slow walk (no regression)"
+    command: {vx: 0.3, vy: 0.0, wz: 0.0}
+    metric: net_displacement_m
+    threshold: 1.45
+    direction: ">="
+    unit: "m"
+    baseline_note: >-
+      80% of the pre-deadband baseline 1.81 m (capability-map cell vx=0.3
+      wz=0, S2-Exp4); guards the known cost of the linear-velocity deadband.
+
+# Per-foot ground-contact veto: if triggered, the whole policy is voided and
+# the gate numbers do not count (exit code 2). Deliberately loose -- catches
+# obvious limping / airborne legs without punishing normal gaits.
+veto:
+  # Any foot with contact fraction below this is suspicious.
+  min_contact_frac: 0.20
+  # Max spread between foot contact fractions (max - min; equals |L-R| for
+  # two feet, the original S2-Exp5 definition).
+  max_asymmetry: 0.30

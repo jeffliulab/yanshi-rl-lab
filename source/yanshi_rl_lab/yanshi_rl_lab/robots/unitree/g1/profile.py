@@ -136,4 +136,8 @@ G1_PROFILE = RobotProfile(
     min_base_height_m=0.2,  # upstream base_height termination minimum
     self_collisions=True,
     action_scale=0.25,  # upstream JointPositionAction scale
+    # Free-joint name in the official unitree_mujoco G1 MJCF (verified in
+    # assets/unitree/g1/mjcf/g1/g1_29dof.xml and in the predecessor stack's
+    # sim2sim scene; both use the same name).
+    root_joint_name="floating_base_joint",
 )

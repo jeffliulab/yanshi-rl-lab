@@ -103,6 +103,10 @@ class RobotProfile:
     # -- defaulted fields -------------------------------------------------
     self_collisions: bool = True
     action_scale: float = 0.25
+    # Name of the floating-base (free) joint in the robot's MJCF. A MuJoCo
+    # model fact, needed by the sim2sim runtime to place/read the base; None
+    # means "not registered yet" and the deploy side will refuse to run.
+    root_joint_name: str | None = None
 
     def __post_init__(self) -> None:
         if self.pd_mode not in PD_MODES:

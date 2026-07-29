@@ -32,6 +32,12 @@ setup(
     description=EXTENSION_TOML_DATA["package"]["description"],
     keywords=EXTENSION_TOML_DATA["package"]["keywords"],
     install_requires=INSTALL_REQUIRES,
+    entry_points={
+        "console_scripts": [
+            # Thin CLI (doctor / assets); pure CPU, works without Isaac Lab.
+            "yanshi=yanshi_rl_lab.cli:main",
+        ],
+    },
     license="MIT",
     include_package_data=True,
     python_requires=">=3.10",
