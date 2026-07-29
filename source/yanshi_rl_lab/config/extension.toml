@@ -1,0 +1,24 @@
+[package]
+
+# Semantic Versioning is used: https://semver.org/
+version = "0.1.0"
+
+# Description
+category = "isaaclab"
+readme  = "README.md"
+
+title = "Yanshi RL Lab"
+author = "Jeff Liu"
+maintainer = "Jeff Liu"
+description = "Vendor-neutral reinforcement learning framework for legged robots, built on Isaac Lab with MuJoCo sim2sim validation"
+repository = "https://github.com/jeffliulab/yanshi-rl-lab"
+keywords = ["isaaclab", "reinforcement-learning", "locomotion", "humanoid", "sim2sim", "benchmark"]
+
+[dependencies]
+"isaaclab" = {}
+"isaaclab_assets" = {}
+"isaaclab_rl" = {}
+"isaaclab_tasks" = {}
+
+[[python.module]]
+name = "yanshi_rl_lab"
