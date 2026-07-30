@@ -36,6 +36,7 @@ from yanshi_rl_lab.deploy.contract import (
     ObsTermSpec,
     TimingSpec,
 )
+from yanshi_rl_lab.robots.profile import profile_of
 
 
 # --------------------------------------------------------------- pure helpers
@@ -194,11 +195,15 @@ def export_contract(env, task_name: str, policy_path: str | None = None) -> Cont
     where the JSON goes (train.py writes ``<log_dir>/params/contract.json``).
     """
     robot = env.scene["robot"]
-    profile = env.cfg.profile
+    # Profiles live in an external MRO-aware registry, NOT on the cfg object
+    # (configclass/hydra would serialize and clobber them -- see the M1 smoke
+    # history). This exporter originally read env.cfg.profile and silently
+    # produced no contract after that fix; caught on the parity run.
+    profile = profile_of(env.cfg)
     if profile is None:
         raise ValueError(
-            "env.cfg.profile is None -- contract export needs the RobotProfile "
-            "(register the task through yanshi_rl_lab.tasks.registry)."
+            "No RobotProfile attached to this env cfg class -- contract export "
+            "needs one (register the task through yanshi_rl_lab.tasks.registry)."
         )
 
     joint_names = list(robot.data.joint_names)
