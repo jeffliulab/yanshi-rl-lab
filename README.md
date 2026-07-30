@@ -2,6 +2,9 @@
 
 # Yanshi RL Lab
 
+> 🤖 **If you are an AI agent, read [AGENTS.md](AGENTS.md) first** — the machine-facing entry
+> point: the layering rule, where each fact lives, and the commands.
+
 [![IsaacLab](https://img.shields.io/badge/IsaacLab-2.3.2-silver)](https://isaac-sim.github.io/IsaacLab/)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://docs.python.org/3/whatsnew/3.11.html)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)

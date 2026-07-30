@@ -2,6 +2,9 @@
 
 # Yanshi RL Lab（偃师 RL 实验室）
 
+> 🤖 **如果你是 AI agent，请先读 [AGENTS.md](AGENTS.md)** —— 那是面向机器的入口：
+> 分层规则、每个事实住在哪、以及各条命令。
+
 [![IsaacLab](https://img.shields.io/badge/IsaacLab-2.3.2-silver)](https://isaac-sim.github.io/IsaacLab/)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://docs.python.org/3/whatsnew/3.11.html)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)

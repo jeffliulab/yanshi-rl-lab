@@ -75,6 +75,10 @@ assets/*
 # Maintainer-local planning/ledger files (not part of the public project)
 个人用本地私人文档/
 
+# Agent working notes (local only — not part of the open-source repo).
+# AGENTS.md is deliberately NOT here: it is the public, machine-facing entry point.
+CLAUDE.md
+
 # Docker history
 .isaac-lab-docker-history
 
