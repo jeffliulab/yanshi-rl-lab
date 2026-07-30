@@ -36,7 +36,6 @@ from __future__ import annotations
 
 import math
 import os
-from typing import ClassVar
 
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
@@ -401,10 +400,14 @@ class CurriculumCfg:
 class VelocityEnvCfg(ManagerBasedRLEnvCfg):
     """Vendor-neutral configuration for the locomotion velocity-tracking environment."""
 
-    # The robot this env is built for. Set by tasks.registry (or a subclass)
-    # before instantiation; never an instance field, so it stays out of the
-    # serialized config dumps.
-    profile: ClassVar[RobotProfile | None] = None
+    # NOTE on the robot profile: the class carries a plain (un-annotated,
+    # post-decoration) attribute ``profile`` set by ``tasks.registry`` after
+    # every configclass() call. It must NOT be declared here: Isaac Lab's
+    # configclass rewrites even ClassVar-annotated members into dataclass
+    # fields with a default factory, which dataclasses rejects
+    # ("field profile cannot have a default factory" -- M1 smoke run r3,
+    # 2026-07-30). Keeping it invisible to the dataclass machinery also keeps
+    # it out of serialized config dumps, which is what we want.
 
     # Scene settings
     scene: RobotSceneCfg = RobotSceneCfg(num_envs=4096, env_spacing=2.5)
@@ -421,7 +424,7 @@ class VelocityEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization: resolve profile semantic slots, then apply the
         upstream general settings verbatim."""
-        assert self.profile is not None, (
+        assert getattr(self, "profile", None) is not None, (
             "VelocityEnvCfg needs a RobotProfile: set the `profile` class attribute on a "
             "subclass (normally via yanshi_rl_lab.tasks.registry.register_velocity) before "
             "instantiating."

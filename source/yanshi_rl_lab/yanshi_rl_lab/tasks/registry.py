@@ -123,7 +123,6 @@ def register_velocity(
             return __post_init__
 
         env_cls = configclass(type(env_cls_name, (VelocityEnvCfg,), {"__post_init__": _make_env_post_init()}))
-        env_cls.profile = profile  # ClassVar on VelocityEnvCfg, set after configclass wrapping
         env_cls.__module__ = module_name
 
         def _make_play_post_init(env_cls=env_cls, terrain: str = terrain, play_overrides=play_overrides):
@@ -136,6 +135,17 @@ def register_velocity(
 
         play_cls = configclass(type(play_cls_name, (env_cls,), {"__post_init__": _make_play_post_init()}))
         play_cls.__module__ = module_name
+
+        # Attach the profile only AFTER every configclass() call in this
+        # class family. configclass also turns *unannotated* class attributes
+        # into dataclass fields, so if the play subclass is decorated while
+        # the env class already carries a plain ``profile`` attribute, the
+        # inherited value collides with the base's ClassVar annotation
+        # ("field profile cannot have a default factory" -- caught by the M1
+        # smoke run r3, 2026-07-30). A post-decoration assignment is a plain
+        # class attribute: __post_init__ resolves it via normal lookup and
+        # dataclass machinery never sees it.
+        env_cls.profile = profile  # ClassVar on VelocityEnvCfg; play_cls inherits
 
         # attach to the caller's module so entry-point strings resolve
         setattr(module, env_cls_name, env_cls)
