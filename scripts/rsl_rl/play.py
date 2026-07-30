@@ -20,12 +20,10 @@ import argparse
 import argcomplete
 import gymnasium as gym
 
-# Register the Yanshi-* tasks before argument parsing so --task gets a real
-# choices list plus shell autocompletion (same pre-AppLauncher import pattern
-# as train.py / upstream unitree_rl_lab).
-import yanshi_rl_lab.tasks  # noqa: F401
-
-TASKS = sorted(spec.id for spec in gym.registry.values() if "Yanshi" in spec.id)
+# ⛔ No task import before AppLauncher -- even try/except poisons sys.modules
+# with pre-app partial initializations (see the full explanation in train.py).
+# --task is validated after the app is up.
+TASKS = None
 
 from isaaclab.app import AppLauncher
 
@@ -60,6 +58,17 @@ if args_cli.video:
 # launch omniverse app
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
+
+# Load the Yanshi-* registrations now that the Isaac stack is importable, and
+# validate --task if the pre-launch scan could not provide argparse choices.
+import yanshi_rl_lab.tasks  # noqa: F401
+
+if TASKS is None:
+    _known = sorted(spec.id for spec in gym.registry.values() if "Yanshi" in spec.id)
+    if args_cli.task not in _known:
+        print(f"[ERROR] Unknown task {args_cli.task!r}. Registered Yanshi tasks:\n  " + "\n  ".join(_known))
+        simulation_app.close()
+        exit(1)
 
 """Rest everything follows."""
 

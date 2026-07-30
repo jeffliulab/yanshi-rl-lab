@@ -20,13 +20,18 @@ import sys
 import argcomplete
 import gymnasium as gym
 
-# Register the Yanshi-* tasks before argument parsing so --task gets a real
-# choices list plus shell autocompletion. Importing the task package before
-# AppLauncher follows the upstream unitree_rl_lab script pattern (proven on
-# this exact stack).
-import yanshi_rl_lab.tasks  # noqa: F401
-
-TASKS = sorted(spec.id for spec in gym.registry.values() if "Yanshi" in spec.id)
+# ⛔ No task import before AppLauncher. Unlike unitree_rl_lab (whose
+# registration modules are string-only and import cleanly without the
+# simulator), our registration modules build env-cfg classes and need the
+# full Isaac stack. Even a try/except pre-launch attempt is unsafe: the
+# failed import leaves successfully-initialized parent modules cached in
+# sys.modules in a pre-app state, and the post-launch retry then resumes
+# mid-chain against that poisoned cache (M1 smoke runs, 2026-07-29/30:
+# first a pxr crash, then a warp AttributeError from exactly this).
+# --task is therefore validated after the app is up; argparse choices and
+# shell autocompletion would need a lightweight string-only registry
+# (backlogged).
+TASKS = None
 
 from isaaclab.app import AppLauncher
 
@@ -65,6 +70,18 @@ sys.argv = [sys.argv[0]] + hydra_args
 # launch omniverse app
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
+
+# Now that the app (and hence pxr/isaaclab) is available, make sure the
+# Yanshi-* registrations are actually loaded, and validate --task if the
+# pre-launch scan could not provide argparse choices.
+import yanshi_rl_lab.tasks  # noqa: F401
+
+if TASKS is None:
+    _known = sorted(spec.id for spec in gym.registry.values() if "Yanshi" in spec.id)
+    if args_cli.task not in _known:
+        print(f"[ERROR] Unknown task {args_cli.task!r}. Registered Yanshi tasks:\n  " + "\n  ".join(_known))
+        simulation_app.close()
+        exit(1)
 
 """Check for minimum supported RSL-RL version."""
 
