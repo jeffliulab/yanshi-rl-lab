@@ -8,13 +8,17 @@ loading of the vendor MJCF + ``xml.etree`` parsing of the vendor URDF; assets
 pinned by ``assets/registry.py``, fetched to ``assets/agibot/x2/X2_URDF-v1.4.0/``):
 
 - Joint table, torque limits, armature/damping/frictionloss, body tree, total
-  mass (44.801 kg, both URDF and MJCF), free-joint name and default pose all
-  read from ``X2-Ultra.xml`` / ``X2-Ultra.urdf`` (v1.4.0). URDF and MJCF agree
+  mass (44.801 kg, both URDF and MJCF) and free-joint name all read from
+  ``X2-Ultra.xml`` / ``X2-Ultra.urdf`` (v1.4.0). URDF and MJCF agree
   on all 31 joint names, ranges and effort limits (verified programmatically);
   they differ only in document order, see ``joint_sdk_names`` below.
-- ``spawn_height_m`` / ``target_base_height_m`` / ``min_base_height_m`` are
-  computed from forward kinematics at the default pose, calibrated against the
-  same quantities of our G1 profile (derivations at each field).
+- ``default_joint_pos`` / ``spawn_height_m`` / ``target_base_height_m`` /
+  ``min_base_height_m`` are numerically derived by CPU MuJoCo forward
+  kinematics (2026-07-30, decision D5): the vendor model ships only the
+  straight-knee zero pose, and training run #1 with that pose never learned
+  to stand (mean episode length ~6 steps, 100% bad_orientation). The
+  bent-knee pose below is solved, not hand-picked -- constraints and solved
+  numbers at each field.
 
 ⚠️ PD GAINS ARE DERIVED, NOT OFFICIAL. AgiBot publishes no kp/kd anywhere in
 the v1.4.0 release. Gains below come from the natural-frequency method
@@ -85,19 +89,51 @@ X2_PROFILE = RobotProfile(
     scene_mjcf="agibot/x2/X2_URDF-v1.4.0/scene.xml",
     usd=None,  # spawn from URDF, same flow as G1
     # -- embodiment -------------------------------------------------------
-    # Derivation: pelvis-origin -> lowest sole point at the default pose is
-    # 0.67495 m (MuJoCo forward kinematics over all collision geoms). Our G1
-    # profile implies a drop clearance of 0.8 - 0.7842 = 0.0158 m with the
-    # same measurement; 0.67495 + 0.0158 = 0.6908, rounded to 0.69 (1.5 cm
-    # sole clearance at spawn). Vendor scene uses 0.68 (0.5 cm clearance).
-    spawn_height_m=0.69,
-    # The vendor model defines no keyframe and places the robot at the
-    # all-zeros pose (straight legs, arms down) standing exactly on the
-    # ground -- that zero pose IS the official default, so we adopt it.
-    # Risk (documented): a straight-knee start is kinematically singular;
-    # if the first smoke run struggles, a bent-knee default would be a
-    # ledger-recorded revision, not a silent edit.
-    default_joint_pos={".*": 0.0},
+    # numerically derived (FK): bent-knee standing root height is 0.63751 m
+    # (pelvis -> lowest sole point, MuJoCo FK over all collision geoms at the
+    # default pose below); + the G1-implied drop clearance 0.8 - 0.7842 =
+    # 0.0158 m -> 0.6533, rounded to 0.65. FK check at spawn z = 0.65: lowest
+    # sole point is +12.5 mm above ground (inside the 5-15 mm drop band).
+    spawn_height_m=0.65,
+    # numerically derived (FK) bent-knee default pose (decision D5,
+    # 2026-07-30). The vendor model has no keyframe: its official default is
+    # the all-zeros straight-knee pose, which is kinematically singular, and
+    # training run #1 spawned with it never learned to stand (mean episode
+    # length ~6 steps = 0.12 s, 100% bad_orientation terminations; sim2sim
+    # gates 0/4, FELL at 0.1 s). Pose solved under four constraints, all
+    # FK-verified with CPU MuJoCo 3.10 on the vendor scene.xml:
+    #   (1) soles flat on ground: hip/knee/ankle pitch axes are all (0,1,0)
+    #       with no intermediate body rotations (verified in the MJCF chain),
+    #       so hip + knee + ankle = 0 exactly; FK foot-body tilt = 0.0000 deg
+    #       and all 20 sole spheres share the lowest z.
+    #   (2) pelvis drops 3-6 cm vs the straight-knee stand (0.67495 m):
+    #       knee = 0.70 rad gives 0.63751 m, a 3.74 cm drop.
+    #   (3) whole-body CoM horizontal projection on the support-polygon
+    #       center: hip solved on a 0.002 rad grid to center mj subtree_com;
+    #       at hip = -0.38 the residual is dx = -0.25 mm, dy = +0.33 mm
+    #       (constraint: < 2 cm).
+    #   (4) every joint >= 0.1 rad from its limits: worst margin is
+    #       shoulder_roll at 0.211 rad (the +/-0.15 roll below exists partly
+    #       because 0.0 sits only 0.061 rad from the roll limit).
+    # Sign conventions FK-probed, NOT copied from G1: knee bends positive
+    # (range [0, 2.41], same as G1) but the elbow bends NEGATIVE (range
+    # [-2.356, 0], opposite of G1), and the G1 forearm points forward at
+    # zero while the X2 forearm hangs down -- raw G1 arm angles must not be
+    # reused. Arms: natural hang, shoulder pitch +0.20 (slightly back),
+    # elbow -0.40 (forearm slightly forward), roll +/-0.15 outward;
+    # FK min hand/forearm-to-thigh clearance 9.6 cm per side (constraint:
+    # > 5 cm).
+    default_joint_pos={
+        ".*_hip_pitch_joint": -0.38,
+        ".*_knee_joint": 0.70,
+        ".*_ankle_pitch_joint": -0.32,  # = -(hip + knee), keeps soles flat
+        ".*_shoulder_pitch_joint": 0.20,
+        "left_shoulder_roll_joint": 0.15,
+        "right_shoulder_roll_joint": -0.15,
+        ".*_elbow_joint": -0.40,
+        # all other joints (hip roll/yaw, ankle roll, waist x3, head x2,
+        # wrist x3) stay 0.0; their smallest limit margin is 0.236 rad.
+    },
     # Groups are peak-torque tiers, which on X2 are exactly the motor classes
     # (README changelog names the 60 / 36 / 6 N*m motor upgrades). Effort
     # limits = MJCF ctrlrange = URDF <limit effort> (identical, verified);
@@ -226,13 +262,14 @@ X2_PROFILE = RobotProfile(
     # base-config change, out of scope for the X2 CPU milestone).
     waist_deviation_joints=["waist_.*_joint", "head_.*_joint"],
     # -- task-derivable facts ---------------------------------------------
-    # Derivation: standing root height at the default pose is 0.67495 m
-    # (sole on ground). G1's reward target / standing-height ratio is
-    # 0.78 / 0.7842 = 0.9946; 0.67495 * 0.9946 = 0.6713, rounded to 0.67.
-    target_base_height_m=0.67,
+    # numerically derived (FK): standing root height at the bent-knee default
+    # pose is 0.63751 m (sole on ground). G1's reward target /
+    # standing-height ratio is 0.78 / 0.7842 = 0.9946;
+    # 0.63751 * 0.9946 = 0.63406, rounded to 0.63.
+    target_base_height_m=0.63,
     # Derivation: G1's termination floor / target ratio is 0.2 / 0.78 =
-    # 0.2564; 0.67 * 0.2564 = 0.1718, rounded to 0.17.
-    min_base_height_m=0.17,
+    # 0.2564; 0.63 * 0.2564 = 0.1615, rounded to 0.16.
+    min_base_height_m=0.16,
     self_collisions=True,
     action_scale=0.25,  # upstream velocity-base convention, same as G1
     # Free-joint name, read from X2-Ultra.xml (body "pelvis").

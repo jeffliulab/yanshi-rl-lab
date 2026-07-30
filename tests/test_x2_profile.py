@@ -161,6 +161,27 @@ def test_deviation_regexes_match_real_joints():
             assert any(re.fullmatch(expr, n) for n in names), f"{slot}: {expr} matches nothing"
 
 
+def test_default_pose_regexes_match_real_joints():
+    """Every default_joint_pos regex must match at least one SDK joint name."""
+    names = X2_PROFILE.joint_sdk_names
+    for expr in X2_PROFILE.default_joint_pos:
+        assert any(re.fullmatch(expr, n) for n in names), f"{expr} matches nothing"
+
+
+def test_default_pose_is_bent_knee_and_flat_foot():
+    """D5 (2026-07-30): fix #1 after training run #1 never stood up from the
+    vendor straight-knee zero pose. Guards the FK-derived pose's two load-
+    bearing invariants: knees actually bent (positive = flexion on X2), and
+    hip + knee + ankle = 0 (all three pitch axes are (0,1,0), so this sum
+    being zero is exactly the flat-sole condition verified by FK)."""
+    pose = X2_PROFILE.default_joint_pos
+    hip = pose[".*_hip_pitch_joint"]
+    knee = pose[".*_knee_joint"]
+    ankle = pose[".*_ankle_pitch_joint"]
+    assert knee > 0.0, "X2 knee flexes positive; default must be bent"
+    assert abs(hip + knee + ankle) < 1e-9, "soles not flat: hip+knee+ankle != 0"
+
+
 def test_height_facts_consistent():
     assert 0.0 < X2_PROFILE.min_base_height_m < X2_PROFILE.target_base_height_m
     assert X2_PROFILE.target_base_height_m <= X2_PROFILE.spawn_height_m
