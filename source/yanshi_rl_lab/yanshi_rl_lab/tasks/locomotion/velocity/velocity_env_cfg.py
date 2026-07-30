@@ -56,7 +56,7 @@ from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
 from yanshi_rl_lab import mdp
 from yanshi_rl_lab.robots.articulation import build_articulation_cfg
-from yanshi_rl_lab.robots.profile import RobotProfile
+from yanshi_rl_lab.robots.profile import RobotProfile, profile_of  # noqa: F401  (RobotProfile kept for type refs)
 from yanshi_rl_lab.terrains.presets import FLAT_TERRAINS_CFG
 
 # -- S2-Exp5 upstream-aligned package, named constants ------------------------
@@ -424,12 +424,12 @@ class VelocityEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization: resolve profile semantic slots, then apply the
         upstream general settings verbatim."""
-        assert getattr(self, "profile", None) is not None, (
-            "VelocityEnvCfg needs a RobotProfile: set the `profile` class attribute on a "
-            "subclass (normally via yanshi_rl_lab.tasks.registry.register_velocity) before "
-            "instantiating."
+        profile = profile_of(self)
+        assert profile is not None, (
+            "VelocityEnvCfg needs a RobotProfile: attach one to a subclass via "
+            "yanshi_rl_lab.robots.profile.attach_profile (normally done by "
+            "yanshi_rl_lab.tasks.registry.register_velocity) before instantiating."
         )
-        profile = self.profile
 
         # -- robot articulation and base-link wiring -----------------------
         self.scene.robot = build_articulation_cfg(profile).replace(prim_path="{ENV_REGEX_NS}/Robot")

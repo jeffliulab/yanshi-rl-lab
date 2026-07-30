@@ -150,3 +150,30 @@ class RobotProfile:
                 "existing assets tree)."
             )
         return path
+
+
+# ── class-to-profile registry ────────────────────────────────────────────────
+# Env-cfg classes must NOT carry their RobotProfile as a class or instance
+# attribute: Isaac Lab's configclass copies plain class attributes into the
+# instance __dict__, class_to_dict() then serializes them, and hydra's
+# from_dict() round-trip tries to write values back into the frozen profile
+# (FrozenInstanceError -- M1 smoke run r4, 2026-07-30). The association
+# therefore lives here, completely outside the config-object namespace,
+# keyed by class and resolved along the MRO so subclasses inherit it.
+
+_CLASS_PROFILES: dict[type, "RobotProfile"] = {}
+
+
+def attach_profile(cls: type, profile: "RobotProfile") -> None:
+    """Associate ``profile`` with an env-cfg class (called by the task registry)."""
+    _CLASS_PROFILES[cls] = profile
+
+
+def profile_of(obj: object) -> "RobotProfile | None":
+    """Return the profile attached to ``obj``'s class (or the class itself),
+    searching base classes in MRO order; None if no ancestor has one."""
+    klass = obj if isinstance(obj, type) else type(obj)
+    for base in klass.__mro__:
+        if base in _CLASS_PROFILES:
+            return _CLASS_PROFILES[base]
+    return None

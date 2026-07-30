@@ -25,7 +25,7 @@ import gymnasium as gym
 
 from isaaclab.utils import configclass
 
-from yanshi_rl_lab.robots.profile import RobotProfile
+from yanshi_rl_lab.robots.profile import RobotProfile, attach_profile
 from yanshi_rl_lab.tasks.locomotion.velocity.velocity_env_cfg import VelocityEnvCfg, playify
 from yanshi_rl_lab.terrains import presets as terrain_presets
 
@@ -136,16 +136,13 @@ def register_velocity(
         play_cls = configclass(type(play_cls_name, (env_cls,), {"__post_init__": _make_play_post_init()}))
         play_cls.__module__ = module_name
 
-        # Attach the profile only AFTER every configclass() call in this
-        # class family. configclass also turns *unannotated* class attributes
-        # into dataclass fields, so if the play subclass is decorated while
-        # the env class already carries a plain ``profile`` attribute, the
-        # inherited value collides with the base's ClassVar annotation
-        # ("field profile cannot have a default factory" -- caught by the M1
-        # smoke run r3, 2026-07-30). A post-decoration assignment is a plain
-        # class attribute: __post_init__ resolves it via normal lookup and
-        # dataclass machinery never sees it.
-        env_cls.profile = profile  # ClassVar on VelocityEnvCfg; play_cls inherits
+        # The profile is deliberately NOT stored on the class: configclass
+        # copies plain class attributes into instances, class_to_dict()
+        # serializes them, and hydra's from_dict() round-trip then writes into
+        # the frozen RobotProfile (M1 smoke runs r3/r4, 2026-07-30). The
+        # association lives in an external MRO-aware registry instead;
+        # play_cls resolves through it via inheritance.
+        attach_profile(env_cls, profile)
 
         # attach to the caller's module so entry-point strings resolve
         setattr(module, env_cls_name, env_cls)
