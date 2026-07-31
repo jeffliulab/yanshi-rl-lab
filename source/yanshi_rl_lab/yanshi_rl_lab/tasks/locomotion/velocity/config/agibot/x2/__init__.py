@@ -8,9 +8,14 @@ acceptance rule: overrides only with evidence, each with a documented reason).
 
 Attempts 1-2 verdict (2026-07-30, decisions D5/D8): both training runs died
 at ~6 steps (100% bad_orientation) -- the robot never stood, so the command
-side never even got tested. The primary fix for attempt 3 is the D8 gain
-calibration (in the robot profile, not here). The dead-command override below
-is the SECOND, independently-evidenced half of the attempt-3 double fix:
+side never even got tested. Root cause found by the 2026-07-31 probe battery
+(decision D9): the vendor collision meshes interpenetrate, so self-collision
+contact forces poisoned undesired_contacts and PPO converged to a suicide
+equilibrium (the ~6-step death was LEARNED at iter ~1400, not physical). The
+primary fix for attempt 3 is therefore in the robot profile
+(self_collisions=False); the D8 kp1050 gain calibration never shipped (D8
+appendix: Isaac zero-action probe refuted it). The dead-command override
+below is the SECOND, independently-evidenced half of the attempt-3 double fix:
 
 - Independent evidence (decision D7, BHL attempt 1): the shared S2-Exp5
   aligned reward table (notably the foot-clearance penalty gated on
@@ -18,7 +23,7 @@ is the SECOND, independently-evidenced half of the attempt-3 double fix:
   (G1 parity 4/4). Under the official slow curriculum (ranges grow from
   +-0.1), low-command episodes make "never lift a foot" a strong local
   optimum -- BHL converged to a standing statue exactly this way. X2 trains
-  on the same reward table, so once it CAN stand (gain fix), the same trap
+  on the same reward table, so once it CAN stand (D9 fix), the same trap
   is waiting; commands are set dead pre-emptively rather than spending a
   fourth attempt (quota is 3, this is the last one) to rediscover D7.
 

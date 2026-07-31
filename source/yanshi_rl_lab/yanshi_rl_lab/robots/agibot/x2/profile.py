@@ -270,7 +270,24 @@ X2_PROFILE = RobotProfile(
     # Derivation: G1's termination floor / target ratio is 0.2 / 0.78 =
     # 0.2564; 0.63 * 0.2564 = 0.1615, rounded to 0.16.
     min_base_height_m=0.16,
-    self_collisions=True,
+    # False since attempt 3 (decision D9, 2026-07-31), THE attempt-3 fix.
+    # The vendor URDF reuses VISUAL meshes as collision meshes and they
+    # interpenetrate at the default pose in five places (torso<->head_pitch
+    # -2.0 cm, torso<->waist_yaw -2.0 cm, wrist_yaw<->wrist_roll -2.9 cm,
+    # knee<->ankle_roll -4.2 cm, pelvis<->hip -1.8 cm; CPU MuJoCo convex-hull
+    # probe). With self-collisions on, Isaac reports 8-19 kN of permanent
+    # internal contact force (robot weight is 440 N), which (a) shows up as
+    # the ~10 rad/s head/wrist "oscillation" of the zero-action probe -- it
+    # is contact-force spray, not under-damped self-excitation (kd x3/x5
+    # changed nothing; with self-collisions off max|qvel| drops 13 -> 0.44),
+    # and (b) keeps the undesired_contacts reward at -0.36~-0.44 per step
+    # while merely standing (G1: -0.006), so PPO converges to a suicide
+    # equilibrium: episode return -13.6 @ 47 steps vs -1.6 @ 6 steps, and
+    # a2's mean episode length collapses 45 -> 6 at iter ~1400. With this
+    # flag off the contact probe shows two clean 212 N feet and the reward
+    # poison is gone. Precedent: BHL ships self_collisions=False officially;
+    # Unitree ships hand-pruned collision geometry, X2 does not.
+    self_collisions=False,
     action_scale=0.25,  # upstream velocity-base convention, same as G1
     # Free-joint name, read from X2-Ultra.xml (body "pelvis").
     root_joint_name="floating_base_joint",
