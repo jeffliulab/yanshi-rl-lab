@@ -1,0 +1,20 @@
+{
+  "protocol_version": 1,
+  "robot": "unitree/g1",
+  "task": "velocity-flat",
+  "commit": "1be486d",
+  "isaaclab_version": "2.3.2",
+  "gpu": "RTX 5070 Ti 16GB",
+  "seeds": [42],
+  "metrics": {
+    "turn_in_place_deg": {"42": 275.8934},
+    "turn_walk_radius_m": {"42": 0.6078},
+    "walk_8s_m": {"42": 4.4931},
+    "slow_walk_8s_m": {"42": 2.2912}
+  },
+  "checkpoint": {"hf_repo": "pending", "revision": "pending"},
+  "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-flat-turn.yaml --contract logs/rsl_rl/2026-07-30_00-18-03_yanshi-g1-flat-parity-s42/params/contract.json --onnx logs/rsl_rl/2026-07-30_00-18-03_yanshi-g1-flat-parity-s42/exported/policy.onnx",
+  "trust_tier": "verified",
+  "date": "2026-07-30",
+  "notes": "M1 parity run, exam velocity-flat-turn.yaml (turn gates command wz=0.6 rad/s). Single seed -- the >=3-seed baseline rule and HF checkpoint hosting are deferred standards (see maintainer backlog); gates 4/4, no veto."
+}
