@@ -11,20 +11,28 @@ Expected: same pass/fail verdicts and per-gate values within the tolerance
 recorded in tests/data/regression_reference_g1_turn.yaml (predecessor
 measurements from S2-Exp5; see that file for provenance).
 
-The fixtures this needs live OUTSIDE this repository, so the module is opt-in:
-set the three environment variables below and it runs for real; leave them
-unset and it skips with a reason, keeping the suite green everywhere else.
+⚠️ This test deliberately runs on ``scene_23dof.xml``, NOT on the scene
+``G1_PROFILE`` declares. That is not the wrong-scene bug (decision ledger
+D11) reappearing -- it is the opposite. The predecessor measured every number
+this test reproduces on that scene, so the scene is part of the acceptance
+criterion; swapping in ``scene_29dof.xml`` would change what is being
+reproduced and quietly redefine the M2 bar. (For the record, that swap moves
+G1 gate values by 1.6-4.3%, comfortably inside this file's +-5% tolerance --
+so it would have passed and told us nothing.) Everything that measures the
+CURRENT stack resolves its scene from the profile; this one reproduces
+history, so it pins history's scene.
 
-    YANSHI_PREDECESSOR_ROOT          predecessor stack checkout; the MuJoCo
-                                     scene is read from
-                                     scenes/mujoco/assets/g1_unitree_mujoco/
-                                     scene_23dof.xml (the file name says 23dof,
-                                     the contents are the 29-DoF deploy G1 --
-                                     this is the scene every predecessor gate
-                                     number was measured on)
+The checkpoints live outside git (weights are never committed), so the module
+is opt-in on those. Defaults point at the local archive; the environment
+variables are overrides.
+
     YANSHI_S2E5_CHECKPOINT_ARCHIVE   directory holding one <cell>/policy.onnx
-                                     per S2-Exp5 matrix cell
+                                     per S2-Exp5 matrix cell. Defaults to
+                                     LOCAL-PRIVATE/Archives/
+                                     predecessor-checkpoints/s2e5-matrix/
     YANSHI_V1_G1_CONTRACT            the deployment repo's v1 G1 contract.json
+                                     (alice-house; no default, it is another
+                                     repository's file)
 
 Also needs mujoco + onnxruntime importable (conda isaaclab env; pure CPU --
 run with CUDA_VISIBLE_DEVICES="" and WITHOUT MUJOCO_GL=egl).
@@ -60,24 +68,26 @@ from yanshi_rl_lab.robots.unitree.g1.dof29.profile import G1_PROFILE  # noqa: E4
 # checkpoints and the deployment repo's v1 contract. Point the two variables
 # below at your own copies to run this regression; leave them unset and the
 # whole module skips with a reason.
-PREDECESSOR_ROOT_ENV_VAR = "YANSHI_PREDECESSOR_ROOT"
 ARCHIVE_ENV_VAR = "YANSHI_S2E5_CHECKPOINT_ARCHIVE"
 V1_CONTRACT_ENV_VAR = "YANSHI_V1_G1_CONTRACT"
 
+# Default archive location, inside this repository's gitignored private area.
+# The checkpoints were rescued out of the predecessor stack before it was
+# archived; before that this test read them across a repository boundary and
+# would have died with it.
+DEFAULT_ARCHIVE = _REPO / "LOCAL-PRIVATE" / "Archives" / "predecessor-checkpoints" / "s2e5-matrix"
 
-def _from_env(var: str) -> Path | None:
+
+def _from_env(var: str, default: Path | None = None) -> Path | None:
     raw = os.environ.get(var)
-    return Path(raw).expanduser() if raw else None
+    return Path(raw).expanduser() if raw else default
 
 
-_PREDECESSOR = _from_env(PREDECESSOR_ROOT_ENV_VAR)
-_ARCHIVE = _from_env(ARCHIVE_ENV_VAR)
+_ARCHIVE = _from_env(ARCHIVE_ENV_VAR, DEFAULT_ARCHIVE)
 _V1_CONTRACT = _from_env(V1_CONTRACT_ENV_VAR)
-_OLD_SCENE = (
-    _PREDECESSOR / "scenes" / "mujoco" / "assets" / "g1_unitree_mujoco" / "scene_23dof.xml"
-    if _PREDECESSOR
-    else None
-)
+# The historical scene, from this repository's own pinned vendor tree. Verified
+# byte-identical to the predecessor's copy before that copy was retired.
+_OLD_SCENE = _REPO / "assets" / "unitree" / "g1" / "mjcf" / "g1" / "scene_23dof.xml"
 
 _GATES_FILE = _REPO / "benchmark" / "gates" / "velocity-flat-turn.yaml"
 _REFERENCE_FILE = Path(__file__).parent / "data" / "regression_reference_g1_turn.yaml"
@@ -87,7 +97,7 @@ def _missing() -> list[str]:
     """Which fixtures are unusable — either unset or pointing at nothing."""
     out = []
     for var, path in (
-        (PREDECESSOR_ROOT_ENV_VAR, _OLD_SCENE),
+        ("(vendor assets; run: python assets/fetch.py unitree/g1)", _OLD_SCENE),
         (ARCHIVE_ENV_VAR, _ARCHIVE),
         (V1_CONTRACT_ENV_VAR, _V1_CONTRACT),
     ):
