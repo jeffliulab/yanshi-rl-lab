@@ -82,14 +82,23 @@ def test_gate_file_declares_its_full_identity(path):
 
 @pytest.mark.parametrize("path", GATE_FILES, ids=lambda p: p.name)
 def test_gate_file_needs_no_hand_written_scene(path):
-    """Either every gate names its own scene, or the robot profile supplies one.
+    """Either every gate names its own scene, or the robot profile declares one.
 
     This is the property that lets a repro command omit --scene entirely.
+    Checks the DECLARATION, not the fetched file: vendor assets are never
+    committed, so CI has none, and "is the scene declared" is the question
+    anyway -- whether it has been downloaded is a separate concern that
+    ``asset_path()`` already reports on its own.
     """
+    from yanshi_rl_lab.robots import registry as robot_registry
+
     spec = run_gates.load_gate_file(path)
     if all("scene" in gate for gate in spec["gates"]):
         return
-    assert run_gates.profile_scene(spec["robot"])
+    assert robot_registry.get(spec["robot"]).scene_mjcf, (
+        f"{path.name} relies on the profile for its scene, but "
+        f"{spec['robot']} declares scene_mjcf=None"
+    )
 
 
 def _minimal(**overrides) -> str:
