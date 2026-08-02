@@ -36,5 +36,5 @@ assets/*
 !assets/registry.py
 !assets/fetch.py
 !assets/README.md
-# Maintainer-local planning/ledger files
-个人用本地私人文档/
+# Maintainer-local notes: standards, ledgers and archived run artifacts.
+LOCAL-PRIVATE/

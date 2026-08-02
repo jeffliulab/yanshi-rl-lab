@@ -45,8 +45,9 @@ def _import_or_skip_clean():
     """
     before = set(sys.modules)
     try:
-        import isaaclab.terrains as _tg  # noqa: F401  pxr-chain canary, must stay first
         import gymnasium as gym
+
+        import isaaclab.terrains as _tg  # noqa: F401  pxr-chain canary, must stay first
 
         g1_module = importlib.import_module(
             "yanshi_rl_lab.tasks.locomotion.velocity.config.unitree.g1"
@@ -168,8 +169,9 @@ def test_flat_task_keeps_parity_profile(stack):
 
 
 def test_track_heading_exp_math(stack):
-    import torch
     from types import SimpleNamespace
+
+    import torch
 
     *_, rewards, _agents = stack
 

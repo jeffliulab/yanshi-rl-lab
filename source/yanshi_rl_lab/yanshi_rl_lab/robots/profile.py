@@ -161,15 +161,15 @@ class RobotProfile:
 # therefore lives here, completely outside the config-object namespace,
 # keyed by class and resolved along the MRO so subclasses inherit it.
 
-_CLASS_PROFILES: dict[type, "RobotProfile"] = {}
+_CLASS_PROFILES: dict[type, RobotProfile] = {}
 
 
-def attach_profile(cls: type, profile: "RobotProfile") -> None:
+def attach_profile(cls: type, profile: RobotProfile) -> None:
     """Associate ``profile`` with an env-cfg class (called by the task registry)."""
     _CLASS_PROFILES[cls] = profile
 
 
-def profile_of(obj: object) -> "RobotProfile | None":
+def profile_of(obj: object) -> RobotProfile | None:
     """Return the profile attached to ``obj``'s class (or the class itself),
     searching base classes in MRO order; None if no ancestor has one."""
     klass = obj if isinstance(obj, type) else type(obj)

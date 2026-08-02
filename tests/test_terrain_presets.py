@@ -44,9 +44,9 @@ def _import_or_skip_clean():
     """
     before = set(sys.modules)
     try:
-        import isaaclab.terrains as tg
-
         from yanshi_rl_lab.terrains import presets
+
+        import isaaclab.terrains as tg
 
         return presets, tg
     except ModuleNotFoundError as exc:

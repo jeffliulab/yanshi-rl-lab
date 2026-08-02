@@ -17,9 +17,19 @@ untested when it was first written (2026-08-01 audit).
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import pytest
 
-from yanshi_rl_lab.utils.play_bands import (
+# Make the package importable on its own. CI installs only pytest/pyyaml/numpy,
+# so nothing puts `yanshi_rl_lab` on the path; relying on another test module
+# to have done it first works only by collection order, which is not a contract.
+_PKG_PARENT = Path(__file__).resolve().parents[1] / "source" / "yanshi_rl_lab"
+if str(_PKG_PARENT) not in sys.path:
+    sys.path.insert(0, str(_PKG_PARENT))
+
+from yanshi_rl_lab.utils.play_bands import (  # noqa: E402
     PLAY_TERRAIN_DIFFICULTY_ENV_VAR,
     parse_difficulty_band,
 )
@@ -74,8 +84,8 @@ def test_validation_survives_optimized_mode():
     The original implementation used `assert 0.0 <= lo < hi <= 1.0`; under
     `python -O` that check disappears and a reversed band would sail through.
     """
+    import os
     import subprocess
-    import sys
 
     code = (
         "from yanshi_rl_lab.utils.play_bands import parse_difficulty_band\n"
@@ -84,7 +94,11 @@ def test_validation_survives_optimized_mode():
         "except ValueError:\n"
         "    print('RAISED')\n"
     )
+    # The child gets its own interpreter, so hand it the package path explicitly:
+    # nothing installs this package in CI.
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.pathsep.join(filter(None, [str(_PKG_PARENT), env.get("PYTHONPATH")]))
     out = subprocess.run(
-        [sys.executable, "-O", "-c", code], capture_output=True, text=True, check=True
+        [sys.executable, "-O", "-c", code], capture_output=True, text=True, check=True, env=env
     )
     assert out.stdout.strip() == "RAISED"
