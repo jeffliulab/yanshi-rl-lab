@@ -72,12 +72,19 @@ def test_every_sdk_joint_covered_by_exactly_one_actuator_group():
 
 
 def test_asset_paths_exist():
-    """The pinned vendor assets are fetched; every declared path must resolve
-    (BHL also ships a USD, which is the official training spawn source)."""
-    for field_name in ("urdf", "mjcf", "scene_mjcf", "usd"):
-        path = BHL_PROFILE.asset_path(field_name)
-        assert path.is_file(), f"{field_name} missing at {path}"
+    """Every declared vendor asset resolves once they have been fetched.
 
+    Vendor models are not stored in this repository (licenses differ per
+    vendor), so this skips where they are absent -- CI runs without them.
+    ``asset_path`` itself raises when a file is missing, so the guard has to
+    wrap the call, not just the ``is_file`` check afterwards.
+    """
+    try:
+        paths = {f: BHL_PROFILE.asset_path(f) for f in ("urdf", "mjcf", "scene_mjcf", "usd")}
+    except FileNotFoundError:
+        pytest.skip("vendor assets not fetched; run: python assets/fetch.py berkeley/humanoid_lite")
+    for field_name, path in paths.items():
+        assert path.is_file(), f"{field_name} missing at {path}"
 
 def test_pd_mode_valid():
     # Official training uses ImplicitActuatorCfg for every group; the deploy

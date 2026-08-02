@@ -15,6 +15,8 @@ import sys
 import types
 from pathlib import Path
 
+import pytest
+
 _PKG_DIR = Path(__file__).resolve().parents[1] / "source" / "yanshi_rl_lab" / "yanshi_rl_lab"
 
 if "yanshi_rl_lab" not in sys.modules:
@@ -94,9 +96,18 @@ def test_every_sdk_joint_covered_by_exactly_one_actuator_group():
 
 
 def test_asset_paths_exist():
-    """The pinned vendor assets are fetched; every declared path must resolve."""
-    for field_name in ("urdf", "mjcf", "scene_mjcf"):
-        path = X2_PROFILE.asset_path(field_name)
+    """Every declared vendor asset resolves once they have been fetched.
+
+    Vendor models are not stored in this repository (licenses differ per
+    vendor), so this skips where they are absent -- CI runs without them.
+    ``asset_path`` itself raises when a file is missing, so the guard has to
+    wrap the call, not just the ``is_file`` check afterwards.
+    """
+    try:
+        paths = {f: X2_PROFILE.asset_path(f) for f in ("urdf", "mjcf", "scene_mjcf")}
+    except FileNotFoundError:
+        pytest.skip("vendor assets not fetched; run: python assets/fetch.py agibot/x2")
+    for field_name, path in paths.items():
         assert path.is_file(), f"{field_name} missing at {path}"
     assert X2_PROFILE.usd is None, "X2 spawns from URDF (no USD asset)"
 
