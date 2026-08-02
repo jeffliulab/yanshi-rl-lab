@@ -10,8 +10,9 @@
 #      onnxruntime or machine-local archives skip themselves via their own
 #      importorskip / skipif guards (no extra CI-side filtering needed);
 #   3. Yanshi Rank result-JSON schema validation (render_rank.py --check);
-#   4. bilingual README consistency (scripts/tools/check_docs.py:
-#      equal '## ' heading counts + referenced repo paths exist).
+#   4. README consistency across languages (scripts/tools/check_docs.py:
+#      equal '## ' heading counts, referenced paths tracked by git, complete
+#      language switcher below the title, prose thresholds).
 
 name: ci
 
@@ -50,5 +51,5 @@ jobs:
         run: python -m pytest tests/ -q -rs
       - name: Yanshi Rank result schema validation
         run: python benchmark/render_rank.py --check
-      - name: README bilingual parity + referenced-path existence
+      - name: README consistency (structure, links, language switch, prose)
         run: python scripts/tools/check_docs.py

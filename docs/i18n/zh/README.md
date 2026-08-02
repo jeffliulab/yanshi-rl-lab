@@ -1,19 +1,23 @@
-[![Language: English](https://img.shields.io/badge/Language-English-2f81f7?style=flat-square)](README.md) [![语言: 简体中文](https://img.shields.io/badge/语言-简体中文-e67e22?style=flat-square)](README_zh.md)
-
 # Yanshi RL Lab（偃师 RL 实验室）
 
 [![Isaac Lab](https://img.shields.io/badge/Isaac_Lab-2.3.2-76b900?style=flat-square)](https://isaac-sim.github.io/IsaacLab/)
 [![Python](https://img.shields.io/badge/Python-3.11-3776ab?style=flat-square)](https://docs.python.org/3/whatsnew/3.11.html)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-v0.1_开发中-orange?style=flat-square)]()
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](../../../LICENSE)
+[![Status](https://img.shields.io/badge/Status-v0.1-orange?style=flat-square)](../../../CHANGELOG.md)
 
+<p>
+<a href="../../../README.md"><img src="https://img.shields.io/badge/Language-English-2f81f7?style=flat-square" alt="English"></a>
+<a href="README.md"><img src="https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-e67e22?style=flat-square" alt="简体中文"></a>
+<a href="../ja/README.md"><img src="https://img.shields.io/badge/%E8%A8%80%E8%AA%9E-%E6%97%A5%E6%9C%AC%E8%AA%9E-bf3989?style=flat-square" alt="日本語"></a>
+<a href="../fr/README.md"><img src="https://img.shields.io/badge/Langue-Fran%C3%A7ais-8250df?style=flat-square" alt="Français"></a>
+</p>
 面向足式机器人的厂商中立强化学习框架：在 Isaac Lab 里训练，在 MuJoCo 里验证，
 所有机器人考同一张卷子。
 
 <p align="center">
-  <img src="docs/media/hero-g1.gif" width="31%" alt="宇树 G1 平地行走">
-  <img src="docs/media/hero-x2.gif" width="31%" alt="智元灵犀 X2 行走">
-  <img src="docs/media/hero-bhl.gif" width="31%" alt="Berkeley Humanoid Lite 行走">
+  <img src="../../media/hero-g1.gif" width="31%" alt="宇树 G1 平地行走">
+  <img src="../../media/hero-x2.gif" width="31%" alt="智元灵犀 X2 行走">
+  <img src="../../media/hero-bhl.gif" width="31%" alt="Berkeley Humanoid Lite 行走">
 </p>
 
 ---
@@ -124,4 +128,4 @@ v0.1 开发中。三台首发机器人里两台通过平地验收门；第三台
 面向 agent 的约定遵循 [agent-rules](https://github.com/jeffliulab/agent-rules)。
 
 MIT © 2026 Jeff Liu。部分启动脚本源自 Isaac Lab 模板（BSD-3-Clause），
-机器人资产遵循各自厂商的许可证——详见 [NOTICE](NOTICE)。
+机器人资产遵循各自厂商的许可证——详见 [NOTICE](../../../NOTICE)。
