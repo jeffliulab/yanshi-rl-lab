@@ -37,7 +37,8 @@ thresholds live in YAML, never in Python, so changing one is a visible, auditabl
 
 The three launch robots differ enough to keep the abstraction honest: a 1.32 m humanoid, a
 1.3 m humanoid from a different vendor, and a 0.6 m open-source printable one with no waist
-joint and legs 40% as long.
+joint and legs 40% as long. Every registered configuration, what it is pinned to and how
+far it has been taken here is listed in [ROBOTS_INTRO.md](ROBOTS_INTRO.md).
 
 The name is the thesis. Yanshi (偃师) was the artificer who presented King Mu of Zhou with an
 automaton that could walk — he was not the robot, he was the one who taught it to walk. This

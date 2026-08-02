@@ -12,7 +12,10 @@
 #   3. Yanshi Rank result-JSON schema validation (render_rank.py --check);
 #   4. README consistency across languages (scripts/tools/check_docs.py:
 #      equal '## ' heading counts, referenced paths tracked by git, complete
-#      language switcher below the title, prose thresholds).
+#      language switcher below the title, prose thresholds);
+#   5. ROBOTS_INTRO.md freshness -- it is generated from the robot registry,
+#      gate files and leaderboard, so onboarding a robot without re-rendering
+#      it must fail rather than quietly leave a stale roster.
 
 name: ci
 
@@ -53,3 +56,5 @@ jobs:
         run: python benchmark/render_rank.py --check
       - name: README consistency (structure, links, language switch, prose)
         run: python scripts/tools/check_docs.py
+      - name: ROBOTS_INTRO.md is up to date with the robot registry
+        run: python scripts/tools/render_robots_intro.py --check

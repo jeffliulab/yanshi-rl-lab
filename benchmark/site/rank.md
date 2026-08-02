@@ -2,6 +2,14 @@
 
 ### velocity-flat
 
+Exam: [`velocity-flat-bhl`](../gates/velocity-flat-bhl.yaml)
+
+| Robot | slow_walk_8s_m (median, IQR) | turn_in_place_deg (median, IQR) | turn_walk_radius_m (median, IQR) | walk_8s_m (median, IQR) | Seeds | Trust | Commit | Checkpoint |
+|---|---|---|---|---|---|---|---|---|
+| berkeley/humanoid_lite/humanoid | 0.020 (0.000) | 7.117 (0.000) | 1.608 (0.000) | 2.751 (0.000) | 1 | verified | `b79df40` | [pending@pending](https://huggingface.co/pending/tree/pending) |
+
+### velocity-flat
+
 Exam: [`velocity-flat-turn`](../gates/velocity-flat-turn.yaml)
 
 | Robot | slow_walk_8s_m (median, IQR) | turn_in_place_deg (median, IQR) | turn_walk_radius_m (median, IQR) | walk_8s_m (median, IQR) | Seeds | Trust | Commit | Checkpoint |
@@ -16,7 +24,15 @@ Exam: [`velocity-flat-x2`](../gates/velocity-flat-x2.yaml)
 |---|---|---|---|---|---|---|---|---|
 | agibot/x2/v1_4_0 | 1.792 (0.000) | 85.504 (0.000) | 2.102 (0.000) | 4.585 (0.000) | 1 | verified | `6e07383` | [pending@pending](https://huggingface.co/pending/tree/pending) |
 
+### velocity-rough
+
+Exam: [`velocity-rough-straight-g1`](../gates/velocity-rough-straight-g1.yaml)
+
+| Robot | rough_low_20s_m (median, IQR) | rough_mid_20s_m (median, IQR) | Seeds | Trust | Commit | Checkpoint |
+|---|---|---|---|---|---|---|
+| unitree/g1/dof29 | 7.086 (0.000) | 0.161 (0.000) | 1 | verified | `b79df40` | [pending@pending](https://huggingface.co/pending/tree/pending) |
+
 > Some subjects above are split across several exams. Numbers are comparable **within** an exam only:
 
-> - `velocity-flat`: `velocity-flat-turn`, `velocity-flat-x2`
+> - `velocity-flat`: `velocity-flat-bhl`, `velocity-flat-turn`, `velocity-flat-x2`
 

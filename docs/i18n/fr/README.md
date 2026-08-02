@@ -42,7 +42,8 @@ une trace visible et auditable.
 Les trois robots de lancement diffèrent assez pour maintenir l'abstraction honnête : un
 humanoïde de 1,32 m, un humanoïde de 1,3 m d'un autre fabricant, et un modèle open source
 imprimable de 0,6 m, sans articulation de taille et dont les jambes ne font que 40 % de la
-longueur.
+longueur. Chaque configuration enregistrée, la version amont sur laquelle elle est figée et
+l'état d'avancement de son évaluation sont listés dans [ROBOTS_INTRO.md](../../../ROBOTS_INTRO.md).
 
 Le nom est la thèse. Yanshi (偃师) était l'artisan qui présenta au roi Mu de Zhou un automate
 capable de marcher — il n'était pas le robot, il était celui qui lui a appris à marcher. Ce
