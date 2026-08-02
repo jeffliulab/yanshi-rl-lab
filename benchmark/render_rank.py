@@ -46,6 +46,13 @@ REQUIRED_FIELDS = (
     "protocol_version",
     "robot",
     "task",
+    # Which exam paper produced these numbers. ``task`` says what is being
+    # compared; ``exam`` says what was actually asked. They are not the same
+    # thing, and conflating them let a G1 row examined at wz=0.6 rad/s sit in
+    # the same column as an X2 row examined at wz=0.2 -- an apparent 3x
+    # turning advantage that was really a different question. Must name a
+    # file in benchmark/gates/.
+    "exam",
     "commit",
     "isaaclab_version",
     "gpu",
@@ -61,10 +68,48 @@ OPTIONAL_FIELDS = ("date", "notes")
 # files keep full precision.
 DISPLAY_DECIMALS = 3
 
-_ROBOT_RE = re.compile(r"^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*$")
+# Robot identity is <vendor>/<model>/<variant>; the variant segment is
+# mandatory (robots/profile.py explains why) so a leaderboard row always says
+# which configuration of a model it measured.
+_ROBOT_RE = re.compile(r"^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*/[a-z][a-z0-9_]*$")
 _TASK_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 _COMMIT_RE = re.compile(r"^[0-9a-f]{7,40}$")
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+GATES_DIR = _REPO_ROOT / "benchmark" / "gates"
+
+
+def _check_exam_agrees_with_gate_file(data: dict, source: str) -> list[str]:
+    """The exam must exist, and claim the same robot and task as the result.
+
+    Without this the three identity fields are just strings a submitter typed:
+    a result could claim ``task: velocity-flat`` while pointing at a rough
+    exam, and the leaderboard would put it in the wrong column. Deliberately
+    a plain text scan, not a YAML parse -- this renderer is pure stdlib so CI
+    and contributors can run it with nothing installed.
+    """
+    gate_file = GATES_DIR / f"{data['exam']}.yaml"
+    if not gate_file.is_file():
+        # An unfetched or partial checkout should not turn into schema noise;
+        # only complain when the gates directory is actually present.
+        if not GATES_DIR.is_dir():
+            return []
+        return [f"{source}: exam {data['exam']!r} names no file at benchmark/gates/{data['exam']}.yaml"]
+    declared: dict[str, str] = {}
+    for line in gate_file.read_text(encoding="utf-8").splitlines():
+        for key in ("robot", "task"):
+            prefix = f"{key}: "
+            if line.startswith(prefix) and key not in declared:
+                declared[key] = line[len(prefix) :].strip()
+    errs = []
+    for key in ("robot", "task"):
+        if key in declared and declared[key] != data[key]:
+            errs.append(
+                f"{source}: {key} {data[key]!r} disagrees with exam "
+                f"{data['exam']!r}, which declares {declared[key]!r}"
+            )
+    return errs
 
 
 def validate_result(data: object, source: str = "<data>") -> list[str]:
@@ -88,9 +133,16 @@ def validate_result(data: object, source: str = "<data>") -> list[str]:
     if data["protocol_version"] != PROTOCOL_VERSION:
         err(f"protocol_version must be {PROTOCOL_VERSION}, got {data['protocol_version']!r}")
     if not (isinstance(data["robot"], str) and _ROBOT_RE.match(data["robot"])):
-        err(f"robot must look like 'vendor/model' (lowercase_with_underscores), got {data['robot']!r}")
+        err(
+            "robot must look like 'vendor/model/variant' (lowercase_with_underscores, "
+            f"each segment starting with a letter), got {data['robot']!r}"
+        )
     if not (isinstance(data["task"], str) and _TASK_RE.match(data["task"])):
         err(f"task must be lowercase-with-hyphens, got {data['task']!r}")
+    if not (isinstance(data["exam"], str) and _TASK_RE.match(data["exam"])):
+        err(f"exam must be lowercase-with-hyphens, got {data['exam']!r}")
+    else:
+        errs.extend(_check_exam_agrees_with_gate_file(data, source))
     if not (isinstance(data["commit"], str) and _COMMIT_RE.match(data["commit"])):
         err(f"commit must be a 7-40 char hex SHA, got {data['commit']!r}")
     for field in ("isaaclab_version", "gpu"):
@@ -199,35 +251,84 @@ def _metric_columns(entries: list[dict]) -> list[str]:
     return sorted(names)
 
 
+def group_by_exam(entries: list[dict]) -> list[tuple[str, str, list[dict]]]:
+    """Group entries into ``(task, exam, entries)``, ordered for display.
+
+    The exam is the grouping key, not the task: rows are comparable exactly
+    when they answered the same question. A task with several exams therefore
+    renders as several tables under one heading, which is the honest shape --
+    "same subject, different paper" must not look like one ranking.
+    """
+    buckets: dict[tuple[str, str], list[dict]] = {}
+    for entry in entries:
+        buckets.setdefault((entry["task"], entry["exam"]), []).append(entry)
+    return [(task, exam, buckets[(task, exam)]) for task, exam in sorted(buckets)]
+
+
 def render_markdown(entries: list[dict]) -> str:
-    """Markdown leaderboard table (embedded into the README by hand)."""
-    metric_cols = _metric_columns(entries)
-    header = ["Robot", "Task", *[f"{m} (median, IQR)" for m in metric_cols], "Seeds", "Trust", "Commit", "Checkpoint"]
+    """Markdown leaderboard, one table per exam (embedded into the README)."""
     lines = [
         "<!-- Generated by benchmark/render_rank.py -- do not edit by hand. -->",
         "",
-        "| " + " | ".join(header) + " |",
-        "|" + "|".join("---" for _ in header) + "|",
     ]
-    if not entries:
-        lines.append(f"| _No results yet._ |{' |' * (len(header) - 1)}")
-    for entry in entries:
-        stats = aggregate(entry)
-        cells = [entry["robot"], entry["task"]]
-        for metric in metric_cols:
-            if metric in stats:
-                med, iqr = stats[metric]
-                cells.append(f"{_fmt(med)} ({_fmt(iqr)})")
-            else:
-                cells.append("—")
-        ckpt = entry["checkpoint"]
-        cells += [
-            str(len(entry["seeds"])),
-            entry["trust_tier"],
-            f"`{entry['commit'][:7]}`",
-            f"[{ckpt['hf_repo']}@{ckpt['revision']}](https://huggingface.co/{ckpt['hf_repo']}/tree/{ckpt['revision']})",
+    groups = group_by_exam(entries)
+    if not groups:
+        lines += ["_No results yet._", ""]
+        return "\n".join(lines) + "\n"
+
+    for task, exam, group in groups:
+        # Metric columns are computed per exam, not globally: a single wide
+        # table across every subject would be mostly em-dashes once rough,
+        # stairs and speed-ladder land alongside flat.
+        metric_cols = _metric_columns(group)
+        header = [
+            "Robot",
+            *[f"{m} (median, IQR)" for m in metric_cols],
+            "Seeds",
+            "Trust",
+            "Commit",
+            "Checkpoint",
         ]
-        lines.append("| " + " | ".join(cells) + " |")
+        lines += [
+            f"### {task}",
+            "",
+            f"Exam: [`{exam}`](../gates/{exam}.yaml)",
+            "",
+            "| " + " | ".join(header) + " |",
+            "|" + "|".join("---" for _ in header) + "|",
+        ]
+        for entry in group:
+            stats = aggregate(entry)
+            cells = [entry["robot"]]
+            for metric in metric_cols:
+                if metric in stats:
+                    med, iqr = stats[metric]
+                    cells.append(f"{_fmt(med)} ({_fmt(iqr)})")
+                else:
+                    cells.append("—")
+            ckpt = entry["checkpoint"]
+            cells += [
+                str(len(entry["seeds"])),
+                entry["trust_tier"],
+                f"`{entry['commit'][:7]}`",
+                f"[{ckpt['hf_repo']}@{ckpt['revision']}]"
+                f"(https://huggingface.co/{ckpt['hf_repo']}/tree/{ckpt['revision']})",
+            ]
+            lines.append("| " + " | ".join(cells) + " |")
+        lines.append("")
+
+    by_task: dict[str, set[str]] = {}
+    for task, exam, _ in groups:
+        by_task.setdefault(task, set()).add(exam)
+    split = {t: sorted(e) for t, e in by_task.items() if len(e) > 1}
+    if split:
+        lines += [
+            "> Some subjects above are split across several exams. Numbers are "
+            "comparable **within** an exam only:",
+            "",
+        ]
+        lines += [f"> - `{t}`: {', '.join('`' + e + '`' for e in exams)}" for t, exams in sorted(split.items())]
+        lines.append("")
     return "\n".join(lines) + "\n"
 
 
@@ -268,6 +369,7 @@ td.num { font-variant-numeric: tabular-nums; }
 code { font: .85em/1 ui-monospace, "SF Mono", Menlo, monospace; }
 a { color: var(--accent); }
 .empty { color: var(--muted); font-style: italic; padding: 2rem 0; }
+.exam { color: var(--muted); font-size: 0.9rem; margin: -0.4rem 0 0.8rem; }
 footer { margin-top: 3rem; color: var(--muted); font-size: .82rem; }
 """
 
@@ -276,11 +378,10 @@ def render_html(entries: list[dict]) -> str:
     """Self-contained leaderboard page (inline CSS, no external resources)."""
     e = html.escape
     body: list[str] = []
-    tasks = sorted({entry["task"] for entry in entries})
-    if not tasks:
+    groups = group_by_exam(entries)
+    if not groups:
         body.append('<p class="empty">No results yet — the first baselines land after protocol v1 freezes.</p>')
-    for task in tasks:
-        task_entries = [x for x in entries if x["task"] == task]
+    for task, exam, task_entries in groups:
         metric_cols = _metric_columns(task_entries)
         columns = ["Robot", *[f"{m} — median (IQR)" for m in metric_cols], "Seeds", "Trust", "Commit", "Checkpoint"]
         head = "".join(f"<th>{e(col)}</th>" for col in columns)
@@ -305,8 +406,13 @@ def render_html(entries: list[dict]) -> str:
             ]
             title = e(entry.get("notes") or entry["_label"])
             rows.append(f'<tr title="{title}">{"".join(cells)}</tr>')
+        # The exam is named next to every table: rows are comparable only
+        # within one, and a reader must be able to open the paper they sat.
         body.append(
-            f"<h2>{e(task)}</h2>\n<div class=\"tablewrap\"><table>\n"
+            f"<h2>{e(task)}</h2>\n"
+            f'<p class="exam">Exam: <a href="https://github.com/jeffliulab/yanshi-rl-lab/'
+            f'blob/main/benchmark/gates/{e(exam)}.yaml"><code>{e(exam)}</code></a></p>\n'
+            f'<div class="tablewrap"><table>\n'
             f"<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody></table></div>"
         )
     return f"""<!doctype html>

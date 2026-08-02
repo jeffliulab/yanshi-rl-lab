@@ -1,7 +1,8 @@
 {
  "protocol_version": 1,
- "robot": "agibot/x2",
+ "robot": "agibot/x2/v1_4_0",
  "task": "velocity-flat",
+ "exam": "velocity-flat-x2",
  "commit": "6e07383",
  "isaaclab_version": "2.3.2",
  "gpu": "RTX 5070 Ti 16GB",
@@ -26,7 +27,7 @@
   "hf_repo": "pending",
   "revision": "pending"
  },
- "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-flat-x2.yaml --contract logs/rsl_rl/2026-07-31_07-32-30_yanshi-x2-flat-s42-a3/params/contract.json --policy logs/rsl_rl/2026-07-31_07-32-30_yanshi-x2-flat-s42-a3/exported/policy.onnx --scene assets/agibot/x2/X2_URDF-v1.4.0/scene.xml",
+ "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-flat-x2.yaml --contract logs/rsl_rl/2026-07-31_07-32-30_yanshi-x2-flat-s42-a3/params/contract.json --policy logs/rsl_rl/2026-07-31_07-32-30_yanshi-x2-flat-s42-a3/exported/policy.onnx",
  "trust_tier": "verified",
  "date": "2026-07-31",
  "notes": "Attempt 3 (D9: self_collisions=False vs vendor interpenetrating collision meshes), exam velocity-flat-x2.yaml (turn gates command wz=0.2 rad/s = trained cap). Single seed -- >=3-seed baseline rule and HF checkpoint hosting are deferred standards (see maintainer backlog); gates 4/4, no veto, human video inspection passed."

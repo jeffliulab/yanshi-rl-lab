@@ -12,6 +12,8 @@ Subcommands:
 - ``yanshi assets fetch``    -- wraps ``assets/fetch.py`` (pinned upstream
   robot models).
 - ``yanshi assets status``   -- fetch state of every registered robot.
+- ``yanshi robots``          -- registered robot configurations
+  (``<vendor>/<model>/<variant>``) and the task ID that trains each one.
 
 ``yanshi list`` (task listing) is NOT implemented here: enumerating gym
 tasks requires booting Isaac Sim; use ``scripts/list_envs.py`` inside the
@@ -267,6 +269,60 @@ def cmd_assets(args) -> int:
     return 0
 
 
+# -------------------------------------------------------------------- robots
+def cmd_robots(args) -> int:
+    """List every registered robot configuration and how to train it.
+
+    This is the answer to "which configurations exist and how do I switch?":
+    a robot's identity is ``<vendor>/<model>/<variant>``, and the variant is
+    carried in the task ID, so switching between the 29-DoF and 23-DoF G1 is
+    a change of ``--task`` and nothing else.
+
+    Pure CPU: profiles never import Isaac Lab, so this works in any
+    environment. It reports the *registered* configurations and their asset
+    state; it does not enumerate gym task IDs (that needs Isaac Sim booted --
+    use ``scripts/list_envs.py`` inside the isaaclab environment).
+    """
+    from yanshi_rl_lab.robots import registry as robot_registry
+
+    profiles = robot_registry.all_profiles()
+    if not profiles:
+        print("no robots registered", file=sys.stderr)
+        return 1
+
+    asset_registry = _load_registry() if _REGISTRY_FILE.exists() else None
+    root = assets_root()
+    print(f"assets root: {root}\n")
+    print(f"  {'robot (vendor/model/variant)':36s} {'assets':9s} example task ID")
+    for key in sorted(profiles):
+        profile = profiles[key]
+        if asset_registry is not None and profile.asset_key in asset_registry.ASSETS:
+            state = _fetch_state(asset_registry, root, profile.asset_key)
+        else:
+            state = "unknown"
+        task_id = (
+            f"Yanshi-Velocity-Flat-{_id_segment(profile.vendor)}-"
+            f"{_id_segment(profile.model)}-{profile.variant[:1].upper()}{profile.variant[1:]}-v0"
+        )
+        print(f"  {key:36s} {state:9s} {task_id}")
+    print(
+        "\nVariants of one model share a single fetched asset tree "
+        "(assets/<vendor>/<model>/): they select different files inside it.\n"
+        "Switch configuration by changing --task; nothing else moves."
+    )
+    return 0
+
+
+def _id_segment(name: str) -> str:
+    """Mirror of tasks/registry.py ``_task_segment`` for vendor/model tokens.
+
+    Duplicated deliberately: importing the task registry would pull in Isaac
+    Lab, and this command must run on a machine that has none. The shared
+    contract is the documented naming rule, not the function.
+    """
+    return "-".join(part.capitalize() for part in name.split("_"))
+
+
 # ---------------------------------------------------------------------- main
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="yanshi", description=__doc__,
@@ -284,6 +340,11 @@ def main(argv=None) -> int:
     fetch.set_defaults(func=cmd_assets)
     status = assets_sub.add_parser("status", help="show fetch state of every registered robot")
     status.set_defaults(func=cmd_assets)
+
+    robots = sub.add_parser(
+        "robots", help="list registered robot configurations (vendor/model/variant)"
+    )
+    robots.set_defaults(func=cmd_robots)
 
     args = parser.parse_args(argv)
     return args.func(args)

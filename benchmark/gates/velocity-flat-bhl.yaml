@@ -30,8 +30,10 @@
 # - Metrics are necessary conditions only: final acceptance still includes a
 #   human watching continuous video.
 
-schema_version: 1
-task: velocity-flat-bhl
+schema_version: 2
+robot: berkeley/humanoid_lite/humanoid
+task: velocity-flat
+exam: velocity-flat-bhl
 
 protocol:
   # Seconds each gate runs (deterministic ONNX inference, fixed command).

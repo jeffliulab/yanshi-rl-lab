@@ -62,19 +62,80 @@ def test_gate_file_loads_and_is_well_formed(path):
     assert 0.0 <= float(veto["max_asymmetry"]) <= 1.0
 
 
+@pytest.mark.parametrize("path", GATE_FILES, ids=lambda p: p.name)
+def test_gate_file_declares_its_full_identity(path):
+    """robot / task / exam must all be present and mutually consistent.
+
+    Schema v1 carried only ``task``, conflating "what is being compared" with
+    "which paper was sat". Two robots examined at different commanded yaw
+    rates then landed in the same leaderboard column looking comparable.
+    """
+    from yanshi_rl_lab.robots import registry as robot_registry
+
+    spec = run_gates.load_gate_file(path)
+    assert spec["exam"] == path.stem
+    assert spec["task"] and "/" not in spec["task"]
+    # The robot must actually exist -- a typo here would silently orphan the
+    # exam from the profile that supplies its scene.
+    robot_registry.get(spec["robot"])
+
+
+@pytest.mark.parametrize("path", GATE_FILES, ids=lambda p: p.name)
+def test_gate_file_needs_no_hand_written_scene(path):
+    """Either every gate names its own scene, or the robot profile supplies one.
+
+    This is the property that lets a repro command omit --scene entirely.
+    """
+    spec = run_gates.load_gate_file(path)
+    if all("scene" in gate for gate in spec["gates"]):
+        return
+    assert run_gates.profile_scene(spec["robot"])
+
+
+def _minimal(**overrides) -> str:
+    doc = {
+        "schema_version": run_gates.GATES_SCHEMA_VERSION,
+        "robot": "unitree/g1/dof29",
+        "task": "velocity-flat",
+        "exam": "bad",
+        "protocol": "{seconds: 1}",
+        "veto": "{min_contact_frac: 0.2, max_asymmetry: 0.3}",
+        "gates": "\n  - name: g\n    command: {vx: 0}\n    metric: m\n    threshold: 1\n"
+        "    direction: '>='\n    unit: m\n",
+    }
+    doc.update(overrides)
+    lines = [f"{k}: {v}" if k != "gates" else f"gates:{v}" for k, v in doc.items()]
+    return "\n".join(lines) + "\n"
+
+
 def test_bad_schema_version_rejected(tmp_path):
     bad = tmp_path / "bad.yaml"
-    bad.write_text("schema_version: 99\ntask: x\nprotocol: {seconds: 1}\ngates: []\nveto: {}\n")
+    bad.write_text(_minimal(schema_version=99))
     with pytest.raises(ValueError, match="schema_version"):
+        run_gates.load_gate_file(bad)
+
+
+def test_missing_identity_key_rejected(tmp_path):
+    for key in ("robot", "task", "exam"):
+        doc = _minimal()
+        doc = "\n".join(ln for ln in doc.splitlines() if not ln.startswith(f"{key}:")) + "\n"
+        bad = tmp_path / "bad.yaml"
+        bad.write_text(doc)
+        with pytest.raises(ValueError, match=key):
+            run_gates.load_gate_file(bad)
+
+
+def test_exam_name_must_match_filename(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text(_minimal(exam="something-else"))
+    with pytest.raises(ValueError, match="does not match its filename"):
         run_gates.load_gate_file(bad)
 
 
 def test_missing_gate_key_rejected(tmp_path):
     bad = tmp_path / "bad.yaml"
     bad.write_text(
-        "schema_version: 1\ntask: x\nprotocol: {seconds: 1}\n"
-        "veto: {min_contact_frac: 0.2, max_asymmetry: 0.3}\n"
-        "gates:\n  - name: g\n    command: {vx: 0}\n    metric: m\n    threshold: 1\n"
+        _minimal(gates="\n  - name: g\n    command: {vx: 0}\n    metric: m\n    threshold: 1\n")
     )
     with pytest.raises(ValueError, match="direction"):
         run_gates.load_gate_file(bad)

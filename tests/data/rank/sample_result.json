@@ -1,18 +1,38 @@
 {
   "protocol_version": 1,
-  "robot": "unitree/g1",
+  "robot": "unitree/g1/dof29",
   "task": "velocity-flat",
+  "exam": "velocity-flat-turn",
   "commit": "fb9b73f",
   "isaaclab_version": "2.3.2",
   "gpu": "RTX 5070 Ti 16GB",
-  "seeds": [42, 43, 44],
+  "seeds": [
+    42,
+    43,
+    44
+  ],
   "metrics": {
-    "tracking_rmse": {"42": 0.041, "43": 0.043, "44": 0.04},
-    "fall_rate": {"42": 0.0, "43": 0.0, "44": 0.0},
-    "net_displacement_m": {"42": 4.42, "43": 4.31, "44": 4.5}
+    "tracking_rmse": {
+      "42": 0.041,
+      "43": 0.043,
+      "44": 0.04
+    },
+    "fall_rate": {
+      "42": 0.0,
+      "43": 0.0,
+      "44": 0.0
+    },
+    "net_displacement_m": {
+      "42": 4.42,
+      "43": 4.31,
+      "44": 4.5
+    }
   },
-  "checkpoint": {"hf_repo": "example/yanshi-fixture", "revision": "v0-test"},
-  "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-flat-turn.yaml --contract <contract.json> --onnx <policy.onnx>",
+  "checkpoint": {
+    "hf_repo": "example/yanshi-fixture",
+    "revision": "v0-test"
+  },
+  "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-flat-turn.yaml --contract <contract.json> --policy <policy.onnx>",
   "trust_tier": "verified",
   "date": "2026-07-29",
   "notes": "TEST FIXTURE - fabricated numbers for schema/render tests only; never place files like this under benchmark/results/."

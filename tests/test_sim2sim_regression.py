@@ -53,7 +53,7 @@ if "yanshi_rl_lab" not in sys.modules:
     sys.modules["yanshi_rl_lab"] = stub
 
 from yanshi_rl_lab.deploy import legacy  # noqa: E402
-from yanshi_rl_lab.robots.unitree.g1.profile import G1_PROFILE  # noqa: E402
+from yanshi_rl_lab.robots.unitree.g1.dof29.profile import G1_PROFILE  # noqa: E402
 
 # ---- read-only predecessor fixtures (opt-in; test skips when unset) ----
 # These live outside this repository: the predecessor stack's archived

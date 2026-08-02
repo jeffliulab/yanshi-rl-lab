@@ -88,7 +88,7 @@ def test_metric_seed_mismatch_rejected(sample):
 
 def test_path_mismatch_rejected(tmp_path, sample):
     root = tmp_path / "results" / "v1"
-    wrong = root / "agibot-x2" / sample["task"]  # file claims unitree/g1
+    wrong = root / "agibot-x2-v1_4_0" / sample["task"]  # file claims unitree/g1/dof29
     wrong.mkdir(parents=True)
     (wrong / "misplaced.json").write_text(json.dumps(sample), encoding="utf-8")
     entries, errors = render_rank.load_results(root)
@@ -106,10 +106,10 @@ def test_render_from_results_tree(tmp_path, sample):
     assert len(entries) == 1
 
     md = render_rank.render_markdown(entries)
-    assert "unitree/g1" in md
+    assert "unitree/g1/dof29" in md
     assert "velocity-flat" in md
     page = render_rank.render_html(entries)
-    assert "unitree/g1" in page
+    assert "unitree/g1/dof29" in page
     assert "verified" in page
     # self-contained page: no external stylesheet/script/font/image requests
     for marker in ("<link", "<script", "src="):

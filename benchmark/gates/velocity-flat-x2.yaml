@@ -21,8 +21,10 @@
 # - Metrics are necessary conditions only: final acceptance still includes a
 #   human watching continuous video.
 
-schema_version: 1
-task: velocity-flat-x2
+schema_version: 2
+robot: agibot/x2/v1_4_0
+task: velocity-flat
+exam: velocity-flat-x2
 
 protocol:
   # Seconds each gate runs (deterministic ONNX inference, fixed command).

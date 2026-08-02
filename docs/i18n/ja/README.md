@@ -52,7 +52,7 @@ YAML にあるため、変更すれば必ず目に見える差分として残り
 
 | ロボット | その場旋回 | 歩行旋回 | 直進 8 秒 | 低速歩行 8 秒 | ゲート |
 |---|---|---|---|---|---|
-| Unitree G1（29 自由度） | 275.9° | 半径 0.61 m | 4.49 m | 2.29 m | 4/4 |
+| Unitree G1（29 自由度） | 280.4° | 半径 0.60 m | 4.30 m | 2.20 m | 4/4 |
 | AgiBot Lingxi X2 | 85.5° | 半径 2.10 m | 4.58 m | 1.79 m | 4/4 |
 | Berkeley Humanoid Lite | 7.1° | 半径 1.61 m | 2.75 m | 0.02 m | 2/4 |
 
@@ -92,20 +92,19 @@ pytest -q
 
 # 2. 学習（素の python ではなく Isaac Lab のランチャ経由）
 ./isaaclab.sh -p scripts/rsl_rl/train.py \
-    --task Yanshi-Velocity-Flat-Unitree-G1-v0 --headless \
+    --task Yanshi-Velocity-Flat-Unitree-G1-Dof29-v0 --headless \
     --num_envs 4096 --max_iterations 10000 --seed 42
 
 # 3. チェックポイントを再生して録画
 ./isaaclab.sh -p scripts/rsl_rl/play.py \
-    --task Yanshi-Velocity-Flat-Unitree-G1-v0 \
+    --task Yanshi-Velocity-Flat-Unitree-G1-Dof29-v0 \
     --checkpoint logs/rsl_rl/<run>/model_9999.pt --video --headless
 
 # 4. MuJoCo で sim2sim ゲート -- CPU のみ、これが受け入れ検査
 python scripts/sim2sim/run_gates.py \
     --gates benchmark/gates/velocity-flat-turn.yaml \
     --contract logs/rsl_rl/<run>/params/contract.json \
-    --policy logs/rsl_rl/<run>/exported/policy.onnx \
-    --scene assets/unitree/g1/mjcf/g1/scene_23dof.xml
+    --policy logs/rsl_rl/<run>/exported/policy.onnx
 ```
 
 終了コードは全ゲート合格で `0`、不合格が 1 つでもあれば `1`、拒否ラインに触れたら `2` です。

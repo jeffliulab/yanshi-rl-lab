@@ -35,8 +35,10 @@
 # - Metrics are necessary conditions only: final acceptance still includes a
 #   human watching continuous video.
 
-schema_version: 1
-task: velocity-rough-straight
+schema_version: 2
+robot: unitree/g1/dof29
+task: velocity-rough
+exam: velocity-rough-straight-g1
 
 protocol:
   # 20 s matches the E1 gates 1/4 protocol (episode_length_s: 20.0).

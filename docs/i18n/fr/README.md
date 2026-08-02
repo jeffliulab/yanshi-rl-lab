@@ -56,7 +56,7 @@ de commandes sur laquelle il a été entraîné, et une chute fait échouer la p
 
 | Robot | Rotation sur place | Rotation en marchant | Marche 8 s | Marche lente 8 s | Portes |
 |---|---|---|---|---|---|
-| Unitree G1 (29 DoF) | 275,9° | r = 0,61 m | 4,49 m | 2,29 m | 4/4 |
+| Unitree G1 (29 DoF) | 280,4° | r = 0,60 m | 4,30 m | 2,20 m | 4/4 |
 | AgiBot Lingxi X2 | 85,5° | r = 2,10 m | 4,58 m | 1,79 m | 4/4 |
 | Berkeley Humanoid Lite | 7,1° | r = 1,61 m | 2,75 m | 0,02 m | 2/4 |
 
@@ -97,20 +97,19 @@ pytest -q
 
 # 2. entraînement (via le lanceur d'Isaac Lab, pas python directement)
 ./isaaclab.sh -p scripts/rsl_rl/train.py \
-    --task Yanshi-Velocity-Flat-Unitree-G1-v0 --headless \
+    --task Yanshi-Velocity-Flat-Unitree-G1-Dof29-v0 --headless \
     --num_envs 4096 --max_iterations 10000 --seed 42
 
 # 3. rejouer un checkpoint et enregistrer une vidéo
 ./isaaclab.sh -p scripts/rsl_rl/play.py \
-    --task Yanshi-Velocity-Flat-Unitree-G1-v0 \
+    --task Yanshi-Velocity-Flat-Unitree-G1-Dof29-v0 \
     --checkpoint logs/rsl_rl/<run>/model_9999.pt --video --headless
 
 # 4. portes sim2sim dans MuJoCo -- CPU seul, c'est l'étape de recette
 python scripts/sim2sim/run_gates.py \
     --gates benchmark/gates/velocity-flat-turn.yaml \
     --contract logs/rsl_rl/<run>/params/contract.json \
-    --policy logs/rsl_rl/<run>/exported/policy.onnx \
-    --scene assets/unitree/g1/mjcf/g1/scene_23dof.xml
+    --policy logs/rsl_rl/<run>/exported/policy.onnx
 ```
 
 Le code de sortie vaut `0` quand toutes les portes passent, `1` quand l'une échoue, `2` quand

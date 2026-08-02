@@ -1,0 +1,34 @@
+{
+ "protocol_version": 1,
+ "robot": "unitree/g1/dof29",
+ "task": "velocity-flat",
+ "exam": "velocity-flat-turn",
+ "commit": "2f219fd",
+ "isaaclab_version": "2.3.2",
+ "gpu": "RTX 5070 Ti 16GB",
+ "seeds": [
+  42
+ ],
+ "metrics": {
+  "turn_in_place_deg": {
+   "42": 280.4358
+  },
+  "turn_walk_radius_m": {
+   "42": 0.5968
+  },
+  "walk_8s_m": {
+   "42": 4.3013
+  },
+  "slow_walk_8s_m": {
+   "42": 2.1975
+  }
+ },
+ "checkpoint": {
+  "hf_repo": "pending",
+  "revision": "pending"
+ },
+ "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-flat-turn.yaml --contract logs/rsl_rl/2026-07-30_00-18-03_yanshi-g1-flat-parity-s42/params/contract.json --policy logs/rsl_rl/2026-07-30_00-18-03_yanshi-g1-flat-parity-s42/exported/policy.onnx",
+ "trust_tier": "verified",
+ "date": "2026-08-02",
+ "notes": "M1 parity run, exam velocity-flat-turn.yaml (turn gates command wz=0.6 rad/s); gates 4/4, no veto. RE-MEASURED 2026-08-02 on the scene the robot profile declares (scene_29dof.xml). The originally published numbers were taken on scene_23dof.xml, whose 29 motor names sit over a 23-DoF kinematic tree -- six joints (waist roll/pitch, both wrist pitch/yaw) hang off massless bodies parked at z=20, so six policy outputs drove nothing. Verdict unchanged (4/4); every number moved (turn +1.6%, radius -1.8%, walk -4.3%, slow walk -4.1%). Single seed -- the >=3-seed baseline rule and HF checkpoint hosting are deferred standards (see maintainer backlog)."
+}

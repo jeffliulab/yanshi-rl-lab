@@ -18,12 +18,21 @@ from shared task code.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 # Environment variable that relocates the assets root (mirrors the
 # HOUSENAV_ASSETS_ROOT pattern used by alice-house consumers).
 ASSETS_ROOT_ENV_VAR = "YANSHI_ASSETS_ROOT"
+
+# Every identity segment doubles as a Python package name (robots/<vendor>/
+# <model>/<variant>/) and as a task-ID segment, so it must be a lowercase
+# identifier. Note the leading letter: a segment like "29dof" is NOT
+# importable, which is exactly the trap the predecessor stack fell into --
+# its config lived at ``unitree_rl_lab...g1.29dof.velocity_variants_env_cfg``
+# and every consumer had to reach it through importlib. Hence "dof29".
+_SEGMENT_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
 # profile.py lives at <repo>/source/yanshi_rl_lab/yanshi_rl_lab/robots/profile.py,
 # so the repository root is four directories up.
@@ -72,8 +81,24 @@ class RobotProfile:
     """Everything the framework needs to know about one robot."""
 
     # -- identity --------------------------------------------------------
+    # Three segments: vendor / model / variant. The variant is mandatory even
+    # when a model currently ships only one configuration -- "there is only
+    # one" is never permanent, and back-filling a segment later means editing
+    # already-published leaderboard entries and task IDs.
+    #
+    # Naming rule: the variant name is UPSTREAM'S OWN name for that
+    # configuration; never invent one. Registered examples:
+    #   unitree/g1/dof29           upstream ships g1_29dof_*.urdf / g1_29dof.xml
+    #   unitree/g1/dof23           upstream ships g1_23dof_*.urdf / g1_23dof.xml
+    #   agibot/x2/v1_4_0           upstream directory is X2_URDF-v1.4.0
+    #   berkeley/humanoid_lite/humanoid   upstream ships "biped" and "humanoid"
+    #
+    # What makes something a variant, in one line: swap it and a trained
+    # policy no longer transfers. Terrain, reward tables and seeds are tasks
+    # and experiments, not variants.
     vendor: str
     model: str
+    variant: str
 
     # -- asset locations (paths relative to ``assets_root()``) ----------
     urdf: str
@@ -117,12 +142,43 @@ class RobotProfile:
     root_joint_name: str | None = None
 
     def __post_init__(self) -> None:
+        for field_name in ("vendor", "model", "variant"):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not _SEGMENT_RE.match(value):
+                raise ValueError(
+                    f"RobotProfile {field_name} must match {_SEGMENT_RE.pattern} "
+                    f"(lowercase, starts with a letter -- it is a package name and a "
+                    f"task-ID segment), got {value!r}."
+                )
         if self.pd_mode not in PD_MODES:
             raise ValueError(
-                f"RobotProfile {self.vendor}/{self.model}: pd_mode must be one of "
+                f"RobotProfile {self.key}: pd_mode must be one of "
                 f"{PD_MODES}, got {self.pd_mode!r}. Refusing to guess -- a wrong "
                 "PD mode makes the robot fall over on first contact."
             )
+
+    @property
+    def key(self) -> str:
+        """Canonical robot identity, ``<vendor>/<model>/<variant>``.
+
+        This exact string is what leaderboard entries record and what
+        ``yanshi robots`` prints; the leaderboard directory name is this with
+        ``/`` replaced by ``-``.
+        """
+        return f"{self.vendor}/{self.model}/{self.variant}"
+
+    @property
+    def asset_key(self) -> str:
+        """Asset-registry key, ``<vendor>/<model>`` -- deliberately NOT the
+        full identity.
+
+        Variants of one model share a single fetched asset tree: upstream ships
+        every configuration in the same repository (both G1 DoF variants come
+        out of one ``unitree_ros`` checkout), and ``assets/fetch.py`` creates
+        one directory per key. Keying assets by variant would clone the same
+        147 MB upstream repo twice and leave two copies free to drift apart.
+        """
+        return f"{self.vendor}/{self.model}"
 
     def asset_path(self, field_name: str) -> Path:
         """Absolute path of one asset field, with an actionable error if missing."""
@@ -133,20 +189,19 @@ class RobotProfile:
         rel = getattr(self, field_name)
         if rel is None:
             raise ValueError(
-                f"RobotProfile {self.vendor}/{self.model} does not define {field_name!r} "
-                "(field is None)."
+                f"RobotProfile {self.key} does not define {field_name!r} (field is None)."
             )
         if Path(rel).is_absolute():
             raise ValueError(
-                f"RobotProfile {self.vendor}/{self.model}: {field_name!r} must be a path "
+                f"RobotProfile {self.key}: {field_name!r} must be a path "
                 f"relative to the assets root, got absolute path {rel!r}."
             )
         path = assets_root() / rel
         if not path.exists():
             raise FileNotFoundError(
-                f"Asset {field_name!r} of {self.vendor}/{self.model} not found at {path}. "
+                f"Asset {field_name!r} of {self.key} not found at {path}. "
                 f"Fetch the vendor assets first: python assets/fetch.py "
-                f"{self.vendor}/{self.model} (or point {ASSETS_ROOT_ENV_VAR} at an "
+                f"{self.asset_key} (or point {ASSETS_ROOT_ENV_VAR} at an "
                 "existing assets tree)."
             )
         return path

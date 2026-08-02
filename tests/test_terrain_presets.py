@@ -138,8 +138,8 @@ def test_g1_registers_rough_without_losing_flat():
     gym = importlib.import_module("gymnasium")
     importlib.import_module(_G1_CONFIG_MODULE)
     ids = {spec.id for spec in gym.registry.values()}
-    assert "Yanshi-Velocity-Flat-Unitree-G1-v0" in ids
-    assert "Yanshi-Velocity-Rough-Nostairs-Unitree-G1-v0" in ids
+    assert "Yanshi-Velocity-Flat-Unitree-G1-Dof29-v0" in ids
+    assert "Yanshi-Velocity-Rough-Nostairs-Unitree-G1-Dof29-v0" in ids
 
 
 def test_rough_nostairs_keeps_terrain_curriculum():

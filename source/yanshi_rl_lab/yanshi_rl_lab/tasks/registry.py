@@ -8,13 +8,20 @@ task, generating the env-config subclasses on the fly -- so a per-robot config
 package contains nothing but the registration call (the "empty overlay"
 acceptance rule) and adding a robot never touches any central file.
 
-Naming rule (documented, fixed): ``vendor`` and ``model`` are lowercase with
-underscores ("unitree", "g1", "humanoid_lite"). Each underscore-separated
-token is capitalized with ``str.capitalize()`` ("g1" -> "G1",
-"humanoid_lite" -> ["Humanoid", "Lite"]). Generated class names concatenate
-the tokens (``UnitreeG1VelocityFlatEnvCfg``); task-ID segments join them with
-hyphens, giving four-part IDs like ``Yanshi-Velocity-Flat-Unitree-G1-v0`` or
-``Yanshi-Velocity-Rough-Berkeley-Humanoid-Lite-v0``.
+Naming rule (documented, fixed): a robot's identity is ``vendor/model/variant``,
+all lowercase with underscores ("unitree", "g1", "dof29"; "berkeley",
+"humanoid_lite", "humanoid"). ``vendor`` and ``model`` split on underscores and
+capitalize each token ("humanoid_lite" -> ["Humanoid", "Lite"]); the ``variant``
+stays one verbatim token (see ``_variant_segment``). Generated class names
+concatenate the tokens (``UnitreeG1Dof29VelocityFlatEnvCfg``); task-ID segments
+join them with hyphens::
+
+    Yanshi-Velocity-Flat-Unitree-G1-Dof29-v0
+    Yanshi-Velocity-Flat-Agibot-X2-V1_4_0-v0
+    Yanshi-Velocity-Rough-Nostairs-Berkeley-Humanoid-Lite-Humanoid-v0
+
+The variant segment is what makes configurations of one model switchable: to
+train the 23-DoF G1 instead of the 29-DoF one, change nothing but ``--task``.
 """
 
 from __future__ import annotations
@@ -42,6 +49,19 @@ def _camel(name: str) -> str:
 def _task_segment(name: str) -> str:
     """"humanoid_lite" -> "Humanoid-Lite"; "g1" -> "G1" (task-ID segment)."""
     return "-".join(part.capitalize() for part in name.split("_"))
+
+
+def _variant_segment(name: str) -> str:
+    """"dof29" -> "Dof29"; "v1_4_0" -> "V1_4_0" (variant segment, verbatim).
+
+    Unlike vendor/model, a variant is kept as ONE segment with its underscores
+    intact. Splitting "v1_4_0" on underscores the way _task_segment does would
+    emit "V1-4-0", whose dashes are indistinguishable from the task-ID's own
+    separators -- a reader (and any parser) could no longer tell where the
+    variant begins and ends. Kept this way, the segment is exactly the variant
+    key, so a task ID is reversible to a robot key by inspection.
+    """
+    return name[:1].upper() + name[1:]
 
 
 def _apply_overrides(cfg, overrides) -> None:
@@ -108,7 +128,10 @@ def register_velocity(
         # fail fast on unknown preset names (before building any class)
         terrain_presets.get(terrain)
 
-        base_name = f"{_camel(profile.vendor)}{_camel(profile.model)}Velocity{_camel(terrain)}"
+        base_name = (
+            f"{_camel(profile.vendor)}{_camel(profile.model)}{_variant_segment(profile.variant)}"
+            f"Velocity{_camel(terrain)}"
+        )
         env_cls_name = f"{base_name}EnvCfg"
         play_cls_name = f"{base_name}PlayEnvCfg"
 
@@ -153,9 +176,12 @@ def register_velocity(
         setattr(module, env_cls_name, env_cls)
         setattr(module, play_cls_name, play_cls)
 
+        # The variant segment is what lets a user switch configurations of the
+        # same model (G1 dof29 vs dof23) by changing only --task.
         task_id = (
             f"Yanshi-Velocity-{_task_segment(terrain)}-"
-            f"{_task_segment(profile.vendor)}-{_task_segment(profile.model)}-v0"
+            f"{_task_segment(profile.vendor)}-{_task_segment(profile.model)}-"
+            f"{_variant_segment(profile.variant)}-v0"
         )
         runner_entry_point = (runner_entry_points or {}).get(terrain, RSL_RL_ENTRY_POINT)
         gym.register(

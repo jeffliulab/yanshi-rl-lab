@@ -1,5 +1,43 @@
 # Changelog
 
+## v0.2 — 2026-08-02
+
+**Idea.** A name has to say what it means. Two things in v0.1 were named by
+convention rather than by record — which robot configuration a result measured,
+and which exam it sat — and both silently produced wrong published numbers.
+
+**Done.**
+
+- **Robot identity is now `<vendor>/<model>/<variant>`** (`unitree/g1/dof29`),
+  with the variant mandatory even for a model that ships one configuration.
+  Variant names are upstream's own; assets stay keyed by model, so
+  configurations of one robot share a single fetched tree. New `yanshi robots`
+  lists them, and the variant rides in the task ID so switching configuration
+  is a `--task` change.
+- **Gate files declare `robot`, `task` and `exam`** (schema v2). The
+  leaderboard groups by exam and links it, because rows are comparable only
+  when they answered the same question.
+- **The scene comes from the robot profile**, not from the command line.
+  `run_gates.py` needs no `--scene`, and results no longer record one.
+- **G1 flat numbers re-measured** and corrected — see below.
+
+**Breaking.** Task IDs, leaderboard `robot` keys and result directory names all
+gained a segment; result files now require `exam`; gate files require
+`schema_version: 2`. No compatibility aliases: v0.1 was one day old with two
+published results, and an alias would have outlived the mistake it hid.
+
+**Corrections.**
+
+- The published G1 flat entry was measured on `scene_23dof.xml`, whose 29 motor
+  names sit over a 23-DoF kinematic tree — six joints (waist roll/pitch, both
+  wrist pitch/yaw) hang off massless bodies parked at z=20, so six policy
+  outputs drove nothing. The profile declared `scene_29dof.xml` all along; the
+  hand-typed path in the repro command was a second source of truth. Re-measured
+  on the profile's scene: verdict unchanged (4/4), every number moved — turn
+  275.9°→280.4°, radius 0.61→0.60 m, walk 4.49→4.30 m, slow walk 2.29→2.20 m.
+  X2 reproduces bit-identically; it had been run on its profile's scene.
+- `benchmark/results/SCHEMA.md` showed a `--onnx` flag that never existed.
+
 ## v0.1 — 2026-08-01
 
 First public release.

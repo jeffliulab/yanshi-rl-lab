@@ -80,7 +80,7 @@ LOCAL-PRIVATE/
 CLAUDE.md
 
 # Scratch area for one-off tooling and recordings. Project rule puts intermediates
-# in the workspace-root temp/, so anything landing here is local-only by definition.
+# in this repo's own temp/ (the workspace root no longer has one), so anything here is local-only.
 temp/
 
 # MuJoCo writes this next to the working directory on every sim2sim run.

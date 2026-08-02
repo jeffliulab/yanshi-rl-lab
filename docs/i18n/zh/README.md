@@ -47,7 +47,7 @@
 
 | 机器人 | 原地转身 | 边走边转 | 直走 8 秒 | 慢走 8 秒 | 过门 |
 |---|---|---|---|---|---|
-| 宇树 G1（29 自由度） | 275.9° | 半径 0.61 m | 4.49 m | 2.29 m | 4/4 |
+| 宇树 G1（29 自由度） | 280.4° | 半径 0.60 m | 4.30 m | 2.20 m | 4/4 |
 | 智元灵犀 X2 | 85.5° | 半径 2.10 m | 4.58 m | 1.79 m | 4/4 |
 | Berkeley Humanoid Lite | 7.1° | 半径 1.61 m | 2.75 m | 0.02 m | 2/4 |
 
@@ -86,20 +86,19 @@ pytest -q
 
 # 2. 训练（走 Isaac Lab 的启动器，不是裸 python）
 ./isaaclab.sh -p scripts/rsl_rl/train.py \
-    --task Yanshi-Velocity-Flat-Unitree-G1-v0 --headless \
+    --task Yanshi-Velocity-Flat-Unitree-G1-Dof29-v0 --headless \
     --num_envs 4096 --max_iterations 10000 --seed 42
 
 # 3. 回放某个 checkpoint 并录像
 ./isaaclab.sh -p scripts/rsl_rl/play.py \
-    --task Yanshi-Velocity-Flat-Unitree-G1-v0 \
+    --task Yanshi-Velocity-Flat-Unitree-G1-Dof29-v0 \
     --checkpoint logs/rsl_rl/<run>/model_9999.pt --video --headless
 
 # 4. 在 MuJoCo 里跑 sim2sim 验收门——纯 CPU，这一步才是验收
 python scripts/sim2sim/run_gates.py \
     --gates benchmark/gates/velocity-flat-turn.yaml \
     --contract logs/rsl_rl/<run>/params/contract.json \
-    --policy logs/rsl_rl/<run>/exported/policy.onnx \
-    --scene assets/unitree/g1/mjcf/g1/scene_23dof.xml
+    --policy logs/rsl_rl/<run>/exported/policy.onnx
 ```
 
 全部通过时退出码为 `0`，有门未过为 `1`，触发否决线为 `2`。

@@ -35,7 +35,7 @@ from yanshi_rl_lab.robots.profile import (  # noqa: E402
     PD_MODES,
     assets_root,
 )
-from yanshi_rl_lab.robots.unitree.g1.profile import G1_PROFILE  # noqa: E402
+from yanshi_rl_lab.robots.unitree.g1.dof29.profile import G1_PROFILE  # noqa: E402
 
 # The G1 29-DoF deploy configuration has exactly 29 SDK joints:
 # 2 legs x 6 + waist 3 + 2 arms x 7.

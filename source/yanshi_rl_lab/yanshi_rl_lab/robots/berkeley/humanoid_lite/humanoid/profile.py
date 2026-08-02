@@ -59,6 +59,9 @@ _BHL_DATA = "berkeley/humanoid_lite/data/robots/berkeley_humanoid/berkeley_human
 BHL_PROFILE = RobotProfile(
     vendor="berkeley",
     model="humanoid_lite",
+    # Upstream's own name: the project ships "biped" (12 DoF) and "humanoid"
+    # (22 DoF); this profile is the humanoid, per the docstring above.
+    variant="humanoid",
     # -- asset locations (relative to the assets root) --------------------
     urdf=f"{_BHL_DATA}/urdf/berkeley_humanoid_lite.urdf",
     # NOTE: the robot MJCF compiles only through the assets/merged symlink

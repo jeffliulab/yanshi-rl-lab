@@ -23,6 +23,9 @@ from yanshi_rl_lab.robots.profile import ActuatorGroup, RobotProfile
 G1_PROFILE = RobotProfile(
     vendor="unitree",
     model="g1",
+    # Upstream's own name for this configuration: unitree_ros ships
+    # g1_29dof_rev_1_0.urdf and unitree_mujoco ships g1_29dof.xml.
+    variant="dof29",
     # -- asset locations (relative to the assets root) --------------------
     urdf="unitree/g1/urdf/g1_description/g1_29dof_rev_1_0.urdf",
     mjcf="unitree/g1/mjcf/g1/g1_29dof.xml",

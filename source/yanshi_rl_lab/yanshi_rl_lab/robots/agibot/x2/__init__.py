@@ -1,10 +1,7 @@
 # Copyright (c) 2026 Jeff Liu.
 # SPDX-License-Identifier: MIT
 
-"""AgiBot Lingxi X2 (X2-Ultra, 31 actuated joints). This package stays pure
-Python (no Isaac Lab imports).
+"""AgiBot Lingxi X2, one sub-package per hardware revision.
 
-NOTE: upstream provides no PD gains -- ours are DERIVED (natural-frequency
-method); see the provenance notes in ``profile.py``."""
-
-from .profile import X2_PROFILE  # noqa: F401
+``v1_4_0`` is upstream's own name: the pinned repo ships the model under
+``X2_URDF-v1.4.0`` (newest revision -- upgraded motors, reinforced frame)."""

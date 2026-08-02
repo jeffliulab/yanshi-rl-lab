@@ -3,7 +3,7 @@
 
 """Pure-Python validation of the AgiBot Lingxi X2 profile (no Isaac Lab, no GPU).
 
-Same stub-package trick as ``test_g1_profile.py``: the real package
+Same stub-package trick as ``test_g1_dof29_profile.py``: the real package
 ``__init__`` imports Isaac Lab, so only the pure-Python profile modules are
 imported underneath a namespace stub.
 """
@@ -24,9 +24,9 @@ if "yanshi_rl_lab" not in sys.modules:
     stub.__path__ = [str(_PKG_DIR)]
     sys.modules["yanshi_rl_lab"] = stub
 
-from yanshi_rl_lab.robots.agibot.x2.profile import X2_PROFILE  # noqa: E402
+from yanshi_rl_lab.robots.agibot.x2.v1_4_0.profile import X2_PROFILE  # noqa: E402
 from yanshi_rl_lab.robots.profile import PD_MODES  # noqa: E402
-from yanshi_rl_lab.robots.unitree.g1.profile import G1_PROFILE  # noqa: E402
+from yanshi_rl_lab.robots.unitree.g1.dof29.profile import G1_PROFILE  # noqa: E402
 
 # X2-Ultra has exactly 31 actuated joints: 2 legs x 6 + waist 3 + head 2
 # + 2 arms x 7 (verified against the vendor MJCF actuator block).

@@ -1,12 +1,10 @@
 # Copyright (c) 2026 Jeff Liu.
 # SPDX-License-Identifier: MIT
 
-"""Berkeley Humanoid Lite (humanoid configuration, 22 actuated joints; the
-armless 12-DoF biped variant is deliberately not registered). This package
-stays pure Python (no Isaac Lab imports).
+"""Berkeley Humanoid Lite, one sub-package per configuration upstream ships.
 
-Gains/limits are the OFFICIAL upstream training values (MIT-licensed
-HybridRobotics stack), transcribed with file+line provenance in
-``profile.py`` -- nothing is derived, unlike X2."""
-
-from .profile import BHL_PROFILE  # noqa: F401
+Upstream publishes two robots: ``biped`` (legs only, 12 DoF) and ``humanoid``
+(legs + two 5-DoF arms, 22 DoF). Only ``humanoid`` is registered -- it is the
+same morphology class as the other launch robots, which is what makes the
+cross-robot benchmark comparable. Adding ``biped`` later means adding a
+sibling directory, nothing else."""

@@ -80,8 +80,8 @@ def _env_cfg_instance(gym, g1_module, task_id: str, kind: str = "env_cfg_entry_p
     return getattr(module, cls_name)()
 
 
-FLAT_TASK = "Yanshi-Velocity-Flat-Unitree-G1-v0"
-ROUGH_TASK = "Yanshi-Velocity-Rough-Nostairs-Unitree-G1-v0"
+FLAT_TASK = "Yanshi-Velocity-Flat-Unitree-G1-Dof29-v0"
+ROUGH_TASK = "Yanshi-Velocity-Rough-Nostairs-Unitree-G1-Dof29-v0"
 
 
 # -- registration + runner entry points --------------------------------------

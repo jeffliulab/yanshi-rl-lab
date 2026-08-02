@@ -4,7 +4,7 @@
 """Pure-Python validation of the Berkeley Humanoid Lite profile (no Isaac
 Lab, no GPU; the one MuJoCo cross-check skips itself when mujoco is absent).
 
-Same stub-package trick as ``test_g1_profile.py``: the real package
+Same stub-package trick as ``test_g1_dof29_profile.py``: the real package
 ``__init__`` imports Isaac Lab, so only the pure-Python profile modules are
 imported underneath a namespace stub.
 """
@@ -25,7 +25,7 @@ if "yanshi_rl_lab" not in sys.modules:
     stub.__path__ = [str(_PKG_DIR)]
     sys.modules["yanshi_rl_lab"] = stub
 
-from yanshi_rl_lab.robots.berkeley.humanoid_lite.profile import BHL_PROFILE  # noqa: E402
+from yanshi_rl_lab.robots.berkeley.humanoid_lite.humanoid.profile import BHL_PROFILE  # noqa: E402
 from yanshi_rl_lab.robots.profile import PD_MODES  # noqa: E402
 
 # The humanoid configuration has exactly 22 actuated joints: 2 arms x 5 +

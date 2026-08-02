@@ -83,6 +83,9 @@ KD_SMALL = 2.0 * DAMPING_RATIO * SMALL_MOTOR_ARMATURE * NATURAL_FREQ_RAD_S  # 1.
 X2_PROFILE = RobotProfile(
     vendor="agibot",
     model="x2",
+    # Upstream's own name for this revision: the pinned repo ships the model
+    # under X2_URDF-v1.4.0 (see assets/registry.py).
+    variant="v1_4_0",
     # -- asset locations (relative to the assets root) --------------------
     urdf="agibot/x2/X2_URDF-v1.4.0/X2-Ultra.urdf",
     mjcf="agibot/x2/X2_URDF-v1.4.0/X2-Ultra.xml",
