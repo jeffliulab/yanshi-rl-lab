@@ -21,7 +21,7 @@ silent field edit.
 
 | field | type | meaning |
 |---|---|---|
-| `protocol_version` | int, `1` | The frozen evaluation protocol this entry was measured under (`benchmark/PROTOCOL_v1.md`). Must match the `results/v<N>/` directory. |
+| `protocol_version` | int, `1` | The frozen evaluation protocol this entry was measured under (`benchmark/PROTOCOL_v1.md` — **not written yet, due in M5**; until then the gate file plus this entry's `repro_command` are the operative definition). Must match the `results/v<N>/` directory. |
 | `robot` | string `"<vendor>/<model>"` | Profile identity, lowercase_with_underscores tokens (same rule as `robots/<vendor>/<model>/`). |
 | `task` | string | Exam-paper name, e.g. `"velocity-flat"`. |
 | `commit` | string, 7–40 hex chars | Code commit of this repository the numbers were produced with. |

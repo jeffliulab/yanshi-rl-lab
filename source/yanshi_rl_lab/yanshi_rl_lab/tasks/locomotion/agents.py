@@ -46,3 +46,18 @@ class YanshiPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         desired_kl=0.01,
         max_grad_norm=1.0,
     )
+
+
+@configclass
+class YanshiRoughPPORunnerCfg(YanshiPPORunnerCfg):
+    """Rough-terrain runner: sole delta = ``entropy_coef`` 0.01 -> 0.008.
+
+    0.008 is the official Isaac Lab ``G1RoughPPORunnerCfg`` value (the rough
+    terrain grid rewards drown the entropy bonus at the flat default); the
+    predecessor stack's S3-实验1 used the same delta (old stack
+    ``S3E1RoughPPORunnerCfg``). Everything else is verbatim the shared runner.
+    """
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.algorithm.entropy_coef = 0.008

@@ -108,3 +108,23 @@ def clearance_penalty(
     cmd = env.command_manager.get_command(command_name)
     gate = torch.norm(cmd[:, :2], dim=1) + torch.abs(cmd[:, 2])
     return cost * (gate > command_threshold).float()
+
+
+def track_heading_exp(env: ManagerBasedRLEnv, command_name: str = "base_velocity", std: float = 0.5) -> torch.Tensor:
+    """Reward matching the command's heading target with a Gaussian kernel.
+
+    ``exp(-(wrap_to_pi(heading_target - heading_w))^2 / std^2)`` -- the direct
+    heading signal that the mainstream stack lacks (it only P-controls wz from
+    the heading error and rewards angular-velocity tracking; see S3-实验2 card
+    section 1.1). For heading-mode envs the target is the sampled heading; for
+    direct-wz envs it is pinned to the yaw at resample time (see
+    ``mdp.commands.HeadingPinnedVelocityCommand``), which turns |wz|~0 samples
+    into explicit straight-line training signal. The command term must expose
+    ``heading_target`` (Isaac Lab ``UniformVelocityCommand`` lineage).
+    """
+    term = env.command_manager.get_term(command_name)
+    asset: Articulation = env.scene[term.cfg.asset_name]
+    from isaaclab.utils import math as math_utils
+
+    heading_error = math_utils.wrap_to_pi(term.heading_target - asset.data.heading_w)
+    return torch.exp(-torch.square(heading_error / std))

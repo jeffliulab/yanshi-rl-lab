@@ -16,6 +16,12 @@ Usage (pure CPU; keep MuJoCo and onnxruntime off the GPU)::
         --contract <contract.json> --policy <policy.onnx> \
         --scene <scene.xml> [--out results.json]
 
+A gate may carry its own ``scene:`` key (a gate file whose gates examine
+different terrain scenes, e.g. the rough re-judge paper); then ``--scene``
+is only the fallback for gates without one, and may be omitted entirely if
+every gate names its scene. Relative scene paths resolve against the
+repository root.
+
 Exit codes: 0 = all gates passed; 1 = at least one gate failed;
 2 = the per-foot contact veto fired (policy void, gate numbers do not count).
 Metrics are necessary conditions only: final acceptance still includes a
@@ -67,7 +73,15 @@ def load_gate_file(path) -> dict:
             raise ValueError(
                 f"Gate {gate['name']!r} direction {gate['direction']!r} not in {sorted(_DIRECTIONS)}."
             )
+        if "scene" in gate and not isinstance(gate["scene"], str):
+            raise ValueError(f"Gate {gate['name']!r} scene must be a path string.")
     return spec
+
+
+def _resolve_scene(scene: str) -> str:
+    """Absolute paths pass through; relative ones anchor at the repo root."""
+    path = Path(scene)
+    return str(path if path.is_absolute() else _REPO / path)
 
 
 def run_one_gate(policy: str, contract: ContractV2, scene: str, command: dict, seconds: float) -> dict:
@@ -95,13 +109,17 @@ def run_one_gate(policy: str, contract: ContractV2, scene: str, command: dict, s
     }
 
 
-def evaluate(spec: dict, policy: str, contract: ContractV2, scene: str) -> dict:
+def evaluate(spec: dict, policy: str, contract: ContractV2, scene: str | None) -> dict:
     seconds = float(spec["protocol"]["seconds"])
     veto_cfg = spec["veto"]
     results = []
     veto_hits = []
     for gate in spec["gates"]:
-        r = run_one_gate(policy, contract, scene, gate["command"], seconds)
+        gate_scene = gate.get("scene", scene)
+        if gate_scene is None:
+            raise ValueError(f"Gate {gate['name']!r} has no scene and --scene was not given.")
+        gate_scene = _resolve_scene(gate_scene)
+        r = run_one_gate(policy, contract, gate_scene, gate["command"], seconds)
         got = r[gate["metric"]]
         passed = _DIRECTIONS[gate["direction"]](got, float(gate["threshold"]))
         if r["fell_at"] is not None:
@@ -112,7 +130,16 @@ def evaluate(spec: dict, policy: str, contract: ContractV2, scene: str) -> dict:
         )
         if veto:
             veto_hits.append(gate["name"])
-        results.append({"gate": gate, "measured": r, "value": got, "passed": bool(passed), "veto": veto})
+        results.append(
+            {
+                "gate": gate,
+                "scene": gate_scene,
+                "measured": r,
+                "value": got,
+                "passed": bool(passed),
+                "veto": veto,
+            }
+        )
     return {"seconds": seconds, "results": results, "veto_hits": veto_hits}
 
 
@@ -127,6 +154,7 @@ def print_report(report: dict, spec: dict) -> None:
         fell = f"FELL at {r['fell_at']:.1f}s" if r["fell_at"] is not None else "no fall"
         contact = " / ".join(f"{n}={f:.2f}" for n, f in zip(r["foot_names"], r["contact_frac"]))
         print(f"[{gate['name']}] vx={cmd.get('vx', 0)} vy={cmd.get('vy', 0)} wz={cmd.get('wz', 0)}")
+        print(f"    scene: {entry['scene']}")
         print(
             f"    disp {r['net_displacement_m']:.2f} m | path {r['path_m']:.2f} m | "
             f"turn {r['turn_deg']:.1f} deg | radius {_fmt(r['radius_m'])} m | {fell}"
@@ -163,7 +191,12 @@ def main() -> int:
     ap.add_argument("--gates", required=True, help="benchmark/gates/*.yaml gate file")
     ap.add_argument("--contract", required=True, help="schema-v2 contract JSON")
     ap.add_argument("--policy", required=True, help="policy.onnx")
-    ap.add_argument("--scene", required=True, help="MuJoCo scene XML matching the contract joints")
+    ap.add_argument(
+        "--scene",
+        default=None,
+        help="MuJoCo scene XML matching the contract joints; fallback for gates "
+        "without their own scene: key (optional when every gate has one)",
+    )
     ap.add_argument("--out", default=None, help="write per-gate metrics to this JSON file")
     args = ap.parse_args()
 
@@ -173,7 +206,7 @@ def main() -> int:
         print(f"[contract] note: {warning}")
     print(f"policy:   {args.policy}")
     print(f"contract: {args.contract}")
-    print(f"scene:    {args.scene}")
+    print(f"scene:    {args.scene or '(per-gate)'}")
     print(f"gates:    {args.gates} ({spec['task']}, {spec['protocol']['seconds']} s each, deterministic)\n")
 
     report = evaluate(spec, args.policy, contract, args.scene)
@@ -186,11 +219,12 @@ def main() -> int:
             "task": spec["task"],
             "policy": str(args.policy),
             "contract": str(args.contract),
-            "scene": str(args.scene),
+            "scene": (None if args.scene is None else str(args.scene)),
             "results": [
                 {
                     "name": e["gate"]["name"],
                     "command": e["gate"]["command"],
+                    "scene": e["scene"],
                     "metric": e["gate"]["metric"],
                     "threshold": e["gate"]["threshold"],
                     "direction": e["gate"]["direction"],

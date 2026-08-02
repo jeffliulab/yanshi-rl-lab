@@ -7,6 +7,14 @@
 # - ROUGH: generator head shared with FLAT, sub-terrains from the official
 #   Isaac Lab ``ROUGH_TERRAINS_CFG`` (isaaclab/terrains/config/rough.py,
 #   BSD-3-Clause).
+# - ROUGH_NOSTAIRS: the official ROUGH_TERRAINS_CFG sub-terrains with the two
+#   stair sub-terrains removed and the remaining proportions renormalized
+#   (0.2:0.2:0.1:0.1 -> 1/3:1/3:1/6:1/6), transcribed verbatim from the
+#   predecessor stack's S3E1_ROUGH_NOSTAIRS_CFG (unitree_rl_lab
+#   .../robots/g1/29dof/velocity_variants_env_cfg.py). The shared generator
+#   head stays untouched (single-variable discipline: only sub_terrains
+#   differ between terrain names), so the old stack's num_rows=10 /
+#   num_cols=20 head values are deliberately NOT carried over.
 
 """Named terrain presets, robot-independent.
 
@@ -89,9 +97,30 @@ ROUGH_TERRAINS_CFG = _generator_head({
     ),
 })
 
+# Rough terrain WITHOUT stairs: the official ROUGH_TERRAINS_CFG sub-terrains
+# minus the two stair sub-terrains, remaining four renormalized
+# (0.2:0.2:0.1:0.1 -> 1/3:1/3:1/6:1/6). Verbatim transcription of the
+# predecessor stack's S3E1_ROUGH_NOSTAIRS_CFG (see the file-header note);
+# sub-terrain parameter values are the official Isaac Lab ones, unchanged.
+ROUGH_NOSTAIRS_TERRAINS_CFG = _generator_head({
+    "hf_random_rough": terrain_gen.HfRandomUniformTerrainCfg(
+        proportion=1 / 3, noise_range=(0.02, 0.10), noise_step=0.02, border_width=0.25
+    ),
+    "boxes": terrain_gen.MeshRandomGridTerrainCfg(
+        proportion=1 / 3, grid_width=0.45, grid_height_range=(0.05, 0.2), platform_width=2.0
+    ),
+    "hf_pyramid_slope": terrain_gen.HfPyramidSlopedTerrainCfg(
+        proportion=1 / 6, slope_range=(0.0, 0.4), platform_width=2.0, border_width=0.25
+    ),
+    "hf_pyramid_slope_inv": terrain_gen.HfInvertedPyramidSlopedTerrainCfg(
+        proportion=1 / 6, slope_range=(0.0, 0.4), platform_width=2.0, border_width=0.25
+    ),
+})
+
 _PRESETS: dict[str, TerrainGeneratorCfg] = {
     "flat": FLAT_TERRAINS_CFG,
     "rough": ROUGH_TERRAINS_CFG,
+    "rough_nostairs": ROUGH_NOSTAIRS_TERRAINS_CFG,
 }
 
 

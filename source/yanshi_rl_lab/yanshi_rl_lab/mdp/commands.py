@@ -99,3 +99,56 @@ def apply_lin_vel_deadband(cfg, deadband: float = LIN_VEL_DEADBAND_MPS) -> None:
     new = DeadbandVelocityCommandCfg(**carried, lin_vel_deadband=deadband)
     assert new.class_type is DeadbandVelocityCommand, "deadband command term not wired in"
     cfg.commands.base_velocity = new
+
+
+class HeadingPinnedVelocityCommand(UniformVelocityCommand):
+    """Heading-mode velocity command whose ``heading_target`` is also defined
+    for the *direct-wz* envs: at every command resample, non-heading envs get
+    their target pinned to the current yaw ("hold the heading you had at
+    resample time").
+
+    Why (S3-实验2 发1): upstream only maintains ``heading_target`` for
+    heading-mode envs, so a direct heading-tracking reward has no target for
+    the direct-wz half of the mixed profile (``rel_heading_envs < 1``). The
+    |wz| < deadband open-loop samples in that half are exactly the
+    straight-line training signal, and pinning gives them a well-defined
+    target without touching the P-control machinery.
+    """
+
+    def _resample_command(self, env_ids: Sequence[int]) -> None:
+        super()._resample_command(env_ids)
+        if not self.cfg.heading_command:
+            return
+        ids = env_ids if torch.is_tensor(env_ids) else torch.as_tensor(list(env_ids), device=self.device)
+        non_heading = ids[~self.is_heading_env[ids]]
+        if len(non_heading) > 0:
+            self.heading_target[non_heading] = self.robot.data.heading_w[non_heading]
+        # One-shot self-check (same discipline as the deadband report): prove
+        # the pinning is wired in, not just plausible-looking.
+        if not getattr(self, "_pinning_reported", False) and len(ids) > 100:
+            pinned = (~self.is_heading_env[ids]).float().mean().item()
+            print(
+                f"[heading-pin] batch of {len(ids)} envs: heading_target pinned to current yaw "
+                f"for {pinned * 100:.1f}% (direct-wz envs)",
+                flush=True,
+            )
+            self._pinning_reported = True
+
+
+@configclass
+class HeadingPinnedVelocityCommandCfg(UniformLevelVelocityCommandCfg):
+    class_type: type = HeadingPinnedVelocityCommand
+
+
+def apply_heading_pinning(cfg) -> None:
+    """Swap the env's ``base_velocity`` command term for the heading-pinning
+    subclass, carrying over **every** existing config field unchanged (same
+    dataclass-fields carry-over discipline as ``apply_lin_vel_deadband``).
+    """
+    import dataclasses
+
+    old = cfg.commands.base_velocity
+    carried = {f.name: getattr(old, f.name) for f in dataclasses.fields(old) if f.name != "class_type"}
+    new = HeadingPinnedVelocityCommandCfg(**carried)
+    assert new.class_type is HeadingPinnedVelocityCommand, "heading-pinning command term not wired in"
+    cfg.commands.base_velocity = new

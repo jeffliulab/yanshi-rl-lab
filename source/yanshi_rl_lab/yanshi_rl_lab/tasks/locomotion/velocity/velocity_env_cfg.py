@@ -58,6 +58,10 @@ from yanshi_rl_lab import mdp
 from yanshi_rl_lab.robots.articulation import build_articulation_cfg
 from yanshi_rl_lab.robots.profile import RobotProfile, profile_of  # noqa: F401  (RobotProfile kept for type refs)
 from yanshi_rl_lab.terrains.presets import FLAT_TERRAINS_CFG
+from yanshi_rl_lab.utils.play_bands import (
+    PLAY_TERRAIN_DIFFICULTY_ENV_VAR,
+    parse_difficulty_band,
+)
 
 # -- S2-Exp5 upstream-aligned package, named constants ------------------------
 # Swing-foot target clearance height (m); same value as the upstream exp-form
@@ -547,6 +551,11 @@ def playify(cfg, hard_terrain: bool = False, fwd_vx: float | None = None) -> Non
         cfg.scene.terrain.terrain_generator.num_cols = 10
         if hard_terrain:
             cfg.scene.terrain.terrain_generator.difficulty_range = PLAY_HARD_TERRAIN_DIFFICULTY
+            # 终审/评审视频按门工况难度带录制（如 "0.0,0.2" 缓带、"0.4,0.6" 中带），
+            # 旧栈 S3E1_PLAY_DIFF 先例同款
+            _band = os.environ.get(PLAY_TERRAIN_DIFFICULTY_ENV_VAR)
+            if _band:
+                cfg.scene.terrain.terrain_generator.difficulty_range = parse_difficulty_band(_band)
     # lock a definite forward speed instead of sampling the training range;
     # also disable "commanded standing" envs
     vx = fwd_vx if fwd_vx is not None else PLAY_DEFAULT_FORWARD_SPEED_MPS

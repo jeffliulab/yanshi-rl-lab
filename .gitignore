@@ -79,6 +79,16 @@ assets/*
 # AGENTS.md is deliberately NOT here: it is the public, machine-facing entry point.
 CLAUDE.md
 
+# Scratch area for one-off tooling and recordings. Project rule puts intermediates
+# in the workspace-root temp/, so anything landing here is local-only by definition.
+temp/
+
+# MuJoCo writes this next to the working directory on every sim2sim run.
+MUJOCO_LOG.TXT
+
+# Local virtualenv (the project normally runs from the isaaclab conda env).
+.venv/
+
 # Docker history
 .isaac-lab-docker-history
 

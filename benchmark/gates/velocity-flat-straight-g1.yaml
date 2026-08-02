@@ -1,0 +1,60 @@
+# Copyright (c) 2026 Jeff Liu. MIT License.
+#
+# Acceptance gate: velocity-flat straight walk for the Unitree G1 29-DoF
+# deploy contract (one gate + per-foot veto), 20 s protocol.
+#
+# Provenance: S3-实验2 (unitree-g1-locomotion, EXPERIMENT.md §2.2 D3 / §2.3).
+# The gate line is the ORIGINAL absolute physical bar of E1 gate-2 (flat
+# ground, net displacement >= 11.5 m @ vx 0.8 / 20 s), carried over
+# UNCHANGED -- its legitimacy comes from the Rudin 4 m x 1.25 displacement
+# anchor, a physical performance bar that does not move with the ruler.
+#
+# POSITIVE-CONTROL ANCHOR RULE (S3-实验2 card §2.3): the known-good
+# predecessor policy "normal" (b2-normal-s42) is run on this same gate
+# FIRST. If the positive control cannot pass the absolute line, the ruler
+# (scene/protocol calibration) is too strict -- REPORT as-is; do NOT
+# quietly move the line.
+#
+# RULES (same as velocity-flat-turn.yaml):
+# - Gate lines live ONLY in this file. Code never carries a threshold.
+# - Changing any number here is a change of acceptance criteria: it requires
+#   an entry in the maintainer decision ledger BEFORE the run it judges.
+# - Metrics are necessary conditions only: final acceptance still includes a
+#   human watching continuous video.
+
+schema_version: 1
+task: velocity-flat-straight
+
+protocol:
+  # Seconds each gate runs (deterministic ONNX inference, fixed command).
+  # 20 s matches the E1 gate-2 / S3E2 exam protocol (episode_length_s: 20.0).
+  seconds: 20.0
+  # Metric names refer to yanshi_rl_lab.deploy.runtime Odometer/DeployLoop
+  # properties; "direction" is ">=" (higher passes) or "<=" (lower passes).
+  # A fall (DeployLoop.fell_at set) fails the gate regardless of the metric.
+
+gates:
+  - name: straight_walk_flat
+    label: "straight walk, flat ground (E1 gate-2 re-judged on the unified ruler)"
+    command: {vx: 0.8, vy: 0.0, wz: 0.0}
+    metric: net_displacement_m
+    threshold: 11.5
+    direction: ">="
+    unit: "m"
+    baseline_note: >-
+      E1 gate-2 original absolute line (Rudin 4 m x 1.25 anchor), unchanged.
+      Positive-control anchor: predecessor normal (b2-normal-s42) measured
+      8.87 m in 12 s (avg ~0.74 m/s, 20 s ideal ~14.8 m) on the predecessor
+      MuJoCo rig, zero falls -- it must pass here; if not, the ruler is
+      miscalibrated and the result is reported, not the line moved.
+
+# Per-foot ground-contact veto: identical criteria to velocity-flat-turn.yaml
+# (deliberately loose -- catches obvious limping / airborne legs without
+# punishing normal gaits). If triggered, the whole policy is voided and the
+# gate numbers do not count (exit code 2).
+veto:
+  # Any foot with contact fraction below this is suspicious.
+  min_contact_frac: 0.20
+  # Max spread between foot contact fractions (max - min; equals |L-R| for
+  # two feet, the original S2-Exp5 definition).
+  max_asymmetry: 0.30

@@ -1,0 +1,79 @@
+# Copyright (c) 2026 Jeff Liu. MIT License.
+#
+# Acceptance gate: velocity-rough straight walk for the Unitree G1 29-DoF
+# deploy contract (two gates: mid / low difficulty bands + per-foot veto),
+# 20 s protocol. Each gate names its own scene (rough MJCF, per-band).
+#
+# Provenance: S3-实验2 (unitree-g1-locomotion, EXPERIMENT.md §2.1/§2.3).
+# The gate lines are the ORIGINAL absolute physical bars of E1 gates 1/4
+# (mid-band net displacement >= 5.0 m, low-band >= 6.5 m @ vx 0.5 / 20 s),
+# carried over UNCHANGED -- their legitimacy comes from the Rudin 4 m x 1.25
+# displacement anchor, a physical performance bar that does not move with
+# the ruler.
+#
+# HONEST NOTES (also in the scene file comments):
+# - The rough MJCF scenes are NOT bit-equivalent to Isaac terrain: they map
+#   only the random-rough sub-terrain, via the standard linear difficulty
+#   law applied to the official noise_range envelope (band midpoints:
+#   low d=0.1 -> A=0.028 m, mid d=0.5 -> A=0.060 m). Line legitimacy rests
+#   on the absolute physical bar + anchor rules below, not terrain identity.
+# - The MuJoCo ruler is a single deterministic closed loop: E1's original
+#   fall-rate lines (<=10% / <=5%) do not map; a fall fails the gate
+#   outright (run_gates.py native behavior).
+# - ANCHOR RULES (card §2.3, amended 2026-07-31): flat-trained normal is
+#   EXPECTED to fall on rough (it trips on a 1 cm carpet) -- its rough
+#   numbers are recorded as anchor raw data, NOT as veto evidence. Ruler
+#   sanity rests on (1) the 1 mm hfield mechanism probe (<0.5% vs flat)
+#   and (2) E1-run2 being a video-approved rough walker: if it measures
+#   <1 m on the mid band (old-ruler levels) or falls in seconds, the ruler
+#   is suspect -- REPORT, do not adjust.
+#
+# RULES (same as velocity-flat-turn.yaml):
+# - Gate lines live ONLY in this file. Code never carries a threshold.
+# - Changing any number here is a change of acceptance criteria: it requires
+#   an entry in the maintainer decision ledger BEFORE the run it judges.
+# - Metrics are necessary conditions only: final acceptance still includes a
+#   human watching continuous video.
+
+schema_version: 1
+task: velocity-rough-straight
+
+protocol:
+  # 20 s matches the E1 gates 1/4 protocol (episode_length_s: 20.0).
+  seconds: 20.0
+  # A fall (DeployLoop.fell_at set) fails the gate regardless of the metric.
+
+gates:
+  - name: straight_walk_rough_mid
+    label: "straight walk, rough mid band d=0.5 A=6.0cm (E1 gate-1 re-judged)"
+    scene: assets/unitree/g1/mjcf/g1/scene_rough_mid.xml
+    command: {vx: 0.5, vy: 0.0, wz: 0.0}
+    metric: net_displacement_m
+    threshold: 5.0
+    direction: ">="
+    unit: "m"
+    baseline_note: >-
+      E1 gate-1 original absolute line (mid band (0.4,0.6), Rudin 4 m x 1.25
+      anchor), unchanged. Scene = rough MJCF mid band (A=0.060 m, seed-42
+      base sample shared with the low band -- amplitude is the only
+      variable). Not bit-equivalent to Isaac terrain; see header notes.
+  - name: straight_walk_rough_low
+    label: "straight walk, rough low band d=0.1 A=2.8cm (E1 gate-4 re-judged)"
+    scene: assets/unitree/g1/mjcf/g1/scene_rough_low.xml
+    command: {vx: 0.5, vy: 0.0, wz: 0.0}
+    metric: net_displacement_m
+    threshold: 6.5
+    direction: ">="
+    unit: "m"
+    baseline_note: >-
+      E1 gate-4 original absolute line (low band (0.0,0.2), interpolation
+      between main gate 50% and flat 73% of ideal), unchanged. Scene =
+      rough MJCF low band (A=0.028 m). Not bit-equivalent to Isaac terrain;
+      see header notes.
+
+# Per-foot ground-contact veto: identical criteria to velocity-flat-turn.yaml
+# (min_contact_frac 0.20 / max_asymmetry 0.30). If triggered, the whole
+# policy is voided and the gate numbers do not count (exit code 2).
+veto:
+  min_contact_frac: 0.20
+  max_asymmetry: 0.30

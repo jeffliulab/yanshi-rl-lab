@@ -78,6 +78,7 @@ def register_velocity(
     terrains: tuple[str, ...] = ("flat",),
     overrides=None,
     play_overrides=None,
+    runner_entry_points: dict[str, str] | None = None,
 ) -> list[str]:
     """Register velocity tasks for one robot; returns the created task IDs.
 
@@ -95,6 +96,10 @@ def register_velocity(
             This is the declared, documented tuning slot -- each entry must
             carry a reason at the call site.
         play_overrides: Same, applied to the play cfg after ``playify``.
+        runner_entry_points: Optional per-terrain PPO runner entry points
+            (``{"rough_nostairs": "...:SomeRunnerCfg"}``); terrains not listed
+            keep the shared ``RSL_RL_ENTRY_POINT`` default. (S3-实验2: the
+            rough recipe carries the official rough entropy delta.)
     """
     module = sys.modules[module_name]
     task_ids: list[str] = []
@@ -152,6 +157,7 @@ def register_velocity(
             f"Yanshi-Velocity-{_task_segment(terrain)}-"
             f"{_task_segment(profile.vendor)}-{_task_segment(profile.model)}-v0"
         )
+        runner_entry_point = (runner_entry_points or {}).get(terrain, RSL_RL_ENTRY_POINT)
         gym.register(
             id=task_id,
             entry_point="isaaclab.envs:ManagerBasedRLEnv",
@@ -159,7 +165,7 @@ def register_velocity(
             kwargs={
                 "env_cfg_entry_point": f"{module_name}:{env_cls_name}",
                 "play_env_cfg_entry_point": f"{module_name}:{play_cls_name}",
-                "rsl_rl_cfg_entry_point": RSL_RL_ENTRY_POINT,
+                "rsl_rl_cfg_entry_point": runner_entry_point,
             },
         )
         task_ids.append(task_id)
