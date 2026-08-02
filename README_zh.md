@@ -123,4 +123,5 @@ v0.1 开发中。三台首发机器人里两台通过平地验收门；第三台
 [Berkeley Humanoid Lite](https://github.com/HybridRobotics/Berkeley-Humanoid-Lite)。
 面向 agent 的约定遵循 [agent-rules](https://github.com/jeffliulab/agent-rules)。
 
-MIT © 2026 Jeff Liu
+MIT © 2026 Jeff Liu。部分启动脚本源自 Isaac Lab 模板（BSD-3-Clause），
+机器人资产遵循各自厂商的许可证——详见 [NOTICE](NOTICE)。

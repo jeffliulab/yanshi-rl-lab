@@ -131,4 +131,5 @@ Built on [Isaac Lab](https://github.com/isaac-sim/IsaacLab) and
 [Berkeley Humanoid Lite](https://github.com/HybridRobotics/Berkeley-Humanoid-Lite). Agent-facing
 conventions follow [agent-rules](https://github.com/jeffliulab/agent-rules).
 
-MIT © 2026 Jeff Liu
+MIT © 2026 Jeff Liu. Some launcher scripts derive from the Isaac Lab template
+(BSD-3-Clause); robot assets stay under their vendors' licenses — see [NOTICE](NOTICE).

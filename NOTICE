@@ -1,0 +1,20 @@
+Yanshi RL Lab
+Copyright (c) 2026 Jeff Liu
+
+This product is licensed under the MIT License (see LICENSE).
+
+Third-party components
+----------------------
+
+Portions of this repository -- the training/evaluation launcher scripts under
+scripts/ and the extension packaging skeleton -- are derived from the Isaac Lab
+project template, Copyright (c) 2022-2026 The Isaac Lab Project Developers,
+licensed under BSD-3-Clause. Those files retain their original license headers.
+
+Robot model assets
+------------------
+
+Robot model assets (URDF / MJCF / USD meshes) are NOT distributed with this
+repository. They are fetched from each vendor's upstream repository by
+assets/fetch.py and remain under their respective upstream licenses. The pinned
+upstream source for each robot is recorded in assets/registry.py.
