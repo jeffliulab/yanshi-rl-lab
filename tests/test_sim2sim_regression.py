@@ -11,24 +11,30 @@ Expected: same pass/fail verdicts and per-gate values within the tolerance
 recorded in tests/data/regression_reference_g1_turn.yaml (predecessor
 measurements from S2-Exp5; see that file for provenance).
 
-Requirements (test SKIPS with a reason when unmet -- this keeps the suite
-green on machines without the archive, while the M2 acceptance run executes
-it for real):
+The fixtures this needs live OUTSIDE this repository, so the module is opt-in:
+set the three environment variables below and it runs for real; leave them
+unset and it skips with a reason, keeping the suite green everywhere else.
 
-- mujoco + onnxruntime importable (conda isaaclab env; pure CPU -- run with
-  CUDA_VISIBLE_DEVICES="" and WITHOUT MUJOCO_GL=egl);
-- the read-only predecessor archives on this machine:
-  - archived S2-Exp5 checkpoints (policy.onnx per cell),
-  - the alice-house g1-29dof-turn contract.json,
-  - the predecessor MuJoCo scene (scene_23dof.xml -- file name says 23dof,
-    contents are the 29-DoF deploy G1; this is the scene every predecessor
-    gate number was measured on).
+    YANSHI_PREDECESSOR_ROOT          predecessor stack checkout; the MuJoCo
+                                     scene is read from
+                                     scenes/mujoco/assets/g1_unitree_mujoco/
+                                     scene_23dof.xml (the file name says 23dof,
+                                     the contents are the 29-DoF deploy G1 --
+                                     this is the scene every predecessor gate
+                                     number was measured on)
+    YANSHI_S2E5_CHECKPOINT_ARCHIVE   directory holding one <cell>/policy.onnx
+                                     per S2-Exp5 matrix cell
+    YANSHI_V1_G1_CONTRACT            the deployment repo's v1 G1 contract.json
+
+Also needs mujoco + onnxruntime importable (conda isaaclab env; pure CPU --
+run with CUDA_VISIBLE_DEVICES="" and WITHOUT MUJOCO_GL=egl).
 """
 
 from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 import types
 from pathlib import Path
@@ -49,30 +55,51 @@ if "yanshi_rl_lab" not in sys.modules:
 from yanshi_rl_lab.deploy import legacy  # noqa: E402
 from yanshi_rl_lab.robots.unitree.g1.profile import G1_PROFILE  # noqa: E402
 
-# ---- read-only predecessor fixtures (machine-local; test skips if absent) ----
-_PREDECESSOR = Path("/home/jeff/2026-summer-career-projects/unitree-g1-locomotion")
-_ARCHIVE = (
-    _PREDECESSOR
-    / "个人用本地私人文档"
-    / "ARCHIVES"
-    / "29dof-媒体源与失败证据"
-    / "s2e5-矩阵五格-最终checkpoint"
+# ---- read-only predecessor fixtures (opt-in; test skips when unset) ----
+# These live outside this repository: the predecessor stack's archived
+# checkpoints and the deployment repo's v1 contract. Point the two variables
+# below at your own copies to run this regression; leave them unset and the
+# whole module skips with a reason.
+PREDECESSOR_ROOT_ENV_VAR = "YANSHI_PREDECESSOR_ROOT"
+ARCHIVE_ENV_VAR = "YANSHI_S2E5_CHECKPOINT_ARCHIVE"
+V1_CONTRACT_ENV_VAR = "YANSHI_V1_G1_CONTRACT"
+
+
+def _from_env(var: str) -> Path | None:
+    raw = os.environ.get(var)
+    return Path(raw).expanduser() if raw else None
+
+
+_PREDECESSOR = _from_env(PREDECESSOR_ROOT_ENV_VAR)
+_ARCHIVE = _from_env(ARCHIVE_ENV_VAR)
+_V1_CONTRACT = _from_env(V1_CONTRACT_ENV_VAR)
+_OLD_SCENE = (
+    _PREDECESSOR / "scenes" / "mujoco" / "assets" / "g1_unitree_mujoco" / "scene_23dof.xml"
+    if _PREDECESSOR
+    else None
 )
-_V1_CONTRACT = Path(
-    "/home/jeff/2026-summer-career-projects/alice-house/policies/g1-29dof-turn/contract.json"
-)
-_OLD_SCENE = _PREDECESSOR / "scenes" / "mujoco" / "assets" / "g1_unitree_mujoco" / "scene_23dof.xml"
 
 _GATES_FILE = _REPO / "benchmark" / "gates" / "velocity-flat-turn.yaml"
 _REFERENCE_FILE = Path(__file__).parent / "data" / "regression_reference_g1_turn.yaml"
 
 
-def _missing() -> list:
-    return [str(p) for p in (_ARCHIVE, _V1_CONTRACT, _OLD_SCENE) if not p.exists()]
+def _missing() -> list[str]:
+    """Which fixtures are unusable — either unset or pointing at nothing."""
+    out = []
+    for var, path in (
+        (PREDECESSOR_ROOT_ENV_VAR, _OLD_SCENE),
+        (ARCHIVE_ENV_VAR, _ARCHIVE),
+        (V1_CONTRACT_ENV_VAR, _V1_CONTRACT),
+    ):
+        if path is None:
+            out.append(f"${var} unset")
+        elif not path.exists():
+            out.append(f"${var} -> {path} (not found)")
+    return out
 
 
 pytestmark = pytest.mark.skipif(
-    bool(_missing()), reason=f"predecessor archives not on this machine: {_missing()}"
+    bool(_missing()), reason=f"predecessor fixtures unavailable: {_missing()}"
 )
 
 

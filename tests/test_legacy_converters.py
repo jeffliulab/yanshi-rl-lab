@@ -11,6 +11,7 @@ Pure Python (no Isaac Lab / MuJoCo).
 from __future__ import annotations
 
 import json
+import os
 import sys
 import types
 from pathlib import Path
@@ -25,13 +26,21 @@ if "yanshi_rl_lab" not in sys.modules:
 
 from yanshi_rl_lab.deploy import legacy  # noqa: E402
 
-# Real predecessor files (read-only stack); optional cross-checks below.
-_V1_G1_CONTRACT = Path(
-    "/home/jeff/2026-summer-career-projects/alice-house/policies/g1-29dof-turn/contract.json"
-)
-_V1_GO2_CONTRACT = Path(
-    "/home/jeff/2026-summer-career-projects/alice-house/policies/go2-velocity-flat/contract.json"
-)
+# Optional cross-checks against real v1 contracts from the deployment repo.
+# They live outside this repository, so they are opt-in: point these at your
+# own copies to enable the two tests below; leave them unset and those tests
+# skip while the rest of the module still runs on the synthetic fixtures.
+V1_G1_CONTRACT_ENV_VAR = "YANSHI_V1_G1_CONTRACT"
+V1_GO2_CONTRACT_ENV_VAR = "YANSHI_V1_GO2_CONTRACT"
+
+
+def _contract_from_env(var: str) -> Path | None:
+    raw = os.environ.get(var)
+    return Path(raw).expanduser() if raw else None
+
+
+_V1_G1_CONTRACT = _contract_from_env(V1_G1_CONTRACT_ENV_VAR)
+_V1_GO2_CONTRACT = _contract_from_env(V1_GO2_CONTRACT_ENV_VAR)
 
 
 # ------------------------------------------------------------ deploy.yaml
@@ -236,7 +245,10 @@ def test_go2_non_default_offset_rejected():
 
 
 # ----------------------------------------- optional: real predecessor files
-@pytest.mark.skipif(not _V1_G1_CONTRACT.exists(), reason="predecessor G1 contract not on this machine")
+@pytest.mark.skipif(
+    _V1_G1_CONTRACT is None or not _V1_G1_CONTRACT.exists(),
+    reason=f"set ${V1_G1_CONTRACT_ENV_VAR} to a v1 G1 contract.json to run this",
+)
 def test_real_g1_contract_converts():
     d = json.loads(_V1_G1_CONTRACT.read_text(encoding="utf-8"))
     contract = legacy.from_contract_v1_g1(
@@ -254,7 +266,10 @@ def test_real_g1_contract_converts():
     contract.validate()
 
 
-@pytest.mark.skipif(not _V1_GO2_CONTRACT.exists(), reason="predecessor Go2 contract not on this machine")
+@pytest.mark.skipif(
+    _V1_GO2_CONTRACT is None or not _V1_GO2_CONTRACT.exists(),
+    reason=f"set ${V1_GO2_CONTRACT_ENV_VAR} to a v1 Go2 contract.json to run this",
+)
 def test_real_go2_contract_converts():
     d = json.loads(_V1_GO2_CONTRACT.read_text(encoding="utf-8"))
     contract = legacy.from_contract_v1_go2(d, pd_mode="explicit")
