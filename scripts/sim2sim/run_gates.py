@@ -15,6 +15,19 @@ Usage (pure CPU; keep MuJoCo and onnxruntime off the GPU)::
         --gates benchmark/gates/velocity-flat-turn.yaml \
         --contract <contract.json> --policy <policy.onnx> [--out results.json]
 
+Published weights live on the Hugging Face Hub (never in git), so a
+leaderboard entry's reproduction command names the release instead of a local
+path::
+
+    CUDA_VISIBLE_DEVICES="" python scripts/sim2sim/run_gates.py \
+        --gates benchmark/gates/velocity-flat-turn.yaml \
+        --hf jeffliulab/yanshi-unitree-g1-dof29@g1-flat-parity-s42 \
+        --subdir velocity-flat
+
+``--hf`` and ``--contract/--policy`` are two ways of naming the same pair of
+files and may not be combined: a command that names both has two sources of
+truth for which policy produced the numbers.
+
 Scene resolution, in order: a gate's own ``scene:`` key, then ``--scene``,
 then **the robot profile named by the gate file's ``robot:`` key**. That last
 step is why no command line here needs to name a scene file.
@@ -72,6 +85,13 @@ from yanshi_rl_lab.deploy.contract import ContractV2  # noqa: E402
 # "velocity-flat" and looked comparable -- while G1 was examined at wz=0.6
 # and X2 at wz=0.2. Same column, different question, 3x apparent advantage.
 GATES_SCHEMA_VERSION = 2
+
+# File names inside a published Hugging Face release directory. These are the
+# layout this project publishes under (documented in each model card), not a
+# Hub-wide convention -- a release that renames them must fail loudly here
+# rather than silently evaluate some other file.
+HF_POLICY_NAME = "policy.onnx"
+HF_CONTRACT_NAME = "contract.json"
 
 # direction string (from YAML) -> pass predicate
 _DIRECTIONS = {
@@ -228,11 +248,80 @@ def print_report(report: dict, spec: dict) -> None:
     print("=" * 64)
 
 
+def parse_hf_ref(ref: str) -> tuple[str, str]:
+    """``<owner>/<repo>@<revision>`` -> ``(repo_id, revision)``.
+
+    Pure function, no network, so leaderboard reproduction strings are
+    testable without the Hub. The revision is mandatory: branches move, and a
+    published row must name the exact release its numbers were measured on.
+    """
+    repo_id, sep, revision = ref.rpartition("@")
+    repo_id, revision = repo_id.strip(), revision.strip()
+    if not sep or not repo_id or not revision:
+        raise ValueError(
+            f"--hf must look like '<owner>/<repo>@<revision>', got {ref!r}. The "
+            "revision is required -- a tag or commit, never a moving branch."
+        )
+    if repo_id.count("/") != 1 or not all(part.strip() for part in repo_id.split("/")):
+        raise ValueError(f"--hf repository must look like '<owner>/<repo>', got {repo_id!r}.")
+    return repo_id, revision
+
+
+def fetch_hf_release(ref: str, subdir: str | None) -> tuple[str, str]:
+    """Download a published release; return ``(contract_path, policy_path)``.
+
+    ``huggingface_hub`` is imported here rather than at module scope so the
+    gate-file loader stays importable without it -- same reason the mujoco /
+    onnxruntime runtime import lives inside run_one_gate().
+
+    A missing repo or revision propagates as an error. It must never fall back
+    to a local file: a reproduction command that quietly evaluates something
+    other than the release it names is worse than one that fails.
+    """
+    repo_id, revision = parse_hf_ref(ref)
+    try:
+        from huggingface_hub import snapshot_download
+    except ImportError as exc:  # pragma: no cover - depends on the environment
+        raise SystemExit("--hf needs huggingface_hub: pip install huggingface_hub") from exc
+
+    subdir = None if subdir is None else subdir.strip("/")
+    root = Path(
+        snapshot_download(
+            repo_id=repo_id,
+            revision=revision,
+            allow_patterns=None if subdir is None else f"{subdir}/*",
+        )
+    )
+    release = root if subdir is None else root / subdir
+    contract, policy = release / HF_CONTRACT_NAME, release / HF_POLICY_NAME
+    missing = [name for name, p in ((HF_CONTRACT_NAME, contract), (HF_POLICY_NAME, policy)) if not p.exists()]
+    if missing:
+        where = f" under {subdir!r}" if subdir else ""
+        raise SystemExit(
+            f"{repo_id}@{revision} has no {' and no '.join(missing)}{where} -- "
+            "not a publishable release of this project."
+        )
+    return str(contract), str(policy)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--gates", required=True, help="benchmark/gates/*.yaml gate file")
-    ap.add_argument("--contract", required=True, help="schema-v2 contract JSON")
-    ap.add_argument("--policy", required=True, help="policy.onnx")
+    ap.add_argument("--contract", default=None, help="schema-v2 contract JSON (local; or use --hf)")
+    ap.add_argument("--policy", default=None, help="policy.onnx (local; or use --hf)")
+    ap.add_argument(
+        "--hf",
+        default=None,
+        help="published release to evaluate, '<owner>/<repo>@<revision>'. Downloads "
+        "the policy and its contract from the Hugging Face Hub instead of taking "
+        "local paths; cannot be combined with --contract/--policy.",
+    )
+    ap.add_argument(
+        "--subdir",
+        default=None,
+        help="directory inside the --hf repository holding this release "
+        "(e.g. 'velocity-flat'); omit when the release sits at the repo root.",
+    )
     ap.add_argument(
         "--scene",
         default=None,
@@ -244,16 +333,35 @@ def main() -> int:
     ap.add_argument("--out", default=None, help="write per-gate metrics to this JSON file")
     args = ap.parse_args()
 
+    # --hf and --contract/--policy name the same pair of files two different
+    # ways. Accepting both would leave the run report unable to say which one
+    # actually produced the numbers, so refuse instead of picking a winner.
+    if args.hf and (args.contract or args.policy):
+        ap.error("--hf cannot be combined with --contract/--policy (two sources of truth)")
+    if args.subdir and not args.hf:
+        ap.error("--subdir only applies to --hf")
+    if args.hf:
+        try:
+            contract_path, policy_path = fetch_hf_release(args.hf, args.subdir)
+        except ValueError as exc:  # malformed reference: a usage error, not a crash
+            ap.error(str(exc))
+        policy_line = f"{policy_path}  (from {args.hf})"
+    elif args.contract and args.policy:
+        contract_path, policy_path = args.contract, args.policy
+        policy_line = str(policy_path)
+    else:
+        ap.error("give either --hf, or both --contract and --policy")
+
     spec = load_gate_file(args.gates)
-    contract = ContractV2.from_json(args.contract)
+    contract = ContractV2.from_json(contract_path)
     for warning in contract.validate():
         print(f"[contract] note: {warning}")
     if args.scene is None:
         scene_line = f"{profile_scene(spec['robot'])}  (from {spec['robot']} profile)"
     else:
         scene_line = f"{args.scene}  (--scene OVERRIDE, not the profile's)"
-    print(f"policy:   {args.policy}")
-    print(f"contract: {args.contract}")
+    print(f"policy:   {policy_line}")
+    print(f"contract: {contract_path}")
     print(f"robot:    {spec['robot']}")
     print(f"scene:    {scene_line}")
     print(
@@ -261,7 +369,7 @@ def main() -> int:
         f"{spec['protocol']['seconds']} s each, deterministic)\n"
     )
 
-    report = evaluate(spec, args.policy, contract, args.scene)
+    report = evaluate(spec, policy_path, contract, args.scene)
     print_report(report, spec)
 
     if args.out:
@@ -274,8 +382,11 @@ def main() -> int:
             "robot": spec["robot"],
             "task": spec["task"],
             "exam": spec["exam"],
-            "policy": str(args.policy),
-            "contract": str(args.contract),
+            "policy": str(policy_path),
+            "contract": str(contract_path),
+            # Which published release these numbers came from, when they came
+            # from one; None means local files were evaluated.
+            "hf_release": args.hf,
             "scene_override": (None if args.scene is None else str(args.scene)),
             "results": [
                 {
