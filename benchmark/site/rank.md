@@ -6,7 +6,7 @@ Exam: [`velocity-flat-bhl`](../gates/velocity-flat-bhl.yaml)
 
 | Robot | slow_walk_8s_m (median, IQR) | turn_in_place_deg (median, IQR) | turn_walk_radius_m (median, IQR) | walk_8s_m (median, IQR) | Seeds | Trust | Commit | Checkpoint |
 |---|---|---|---|---|---|---|---|---|
-| berkeley/humanoid_lite/humanoid | 0.020 (0.000) | 7.117 (0.000) | 1.608 (0.000) | 2.751 (0.000) | 1 | verified | `b79df40` | [pending@pending](https://huggingface.co/pending/tree/pending) |
+| berkeley/humanoid_lite/humanoid | 0.020 (0.000) | 7.117 (0.000) | 1.608 (0.000) | 2.751 (0.000) | 1 | verified | `9db7285` | [jeffliulab/yanshi-berkeley-humanoid_lite-humanoid@bhl-flat-s42-a3](https://huggingface.co/jeffliulab/yanshi-berkeley-humanoid_lite-humanoid/tree/bhl-flat-s42-a3) |
 
 ### velocity-flat
 
@@ -14,7 +14,7 @@ Exam: [`velocity-flat-turn`](../gates/velocity-flat-turn.yaml)
 
 | Robot | slow_walk_8s_m (median, IQR) | turn_in_place_deg (median, IQR) | turn_walk_radius_m (median, IQR) | walk_8s_m (median, IQR) | Seeds | Trust | Commit | Checkpoint |
 |---|---|---|---|---|---|---|---|---|
-| unitree/g1/dof29 | 2.197 (0.000) | 280.436 (0.000) | 0.597 (0.000) | 4.301 (0.000) | 1 | verified | `2f219fd` | [pending@pending](https://huggingface.co/pending/tree/pending) |
+| unitree/g1/dof29 | 2.197 (0.000) | 280.436 (0.000) | 0.597 (0.000) | 4.301 (0.000) | 1 | verified | `9db7285` | [jeffliulab/yanshi-unitree-g1-dof29@g1-flat-parity-s42](https://huggingface.co/jeffliulab/yanshi-unitree-g1-dof29/tree/g1-flat-parity-s42) |
 
 ### velocity-flat
 
@@ -22,7 +22,7 @@ Exam: [`velocity-flat-x2`](../gates/velocity-flat-x2.yaml)
 
 | Robot | slow_walk_8s_m (median, IQR) | turn_in_place_deg (median, IQR) | turn_walk_radius_m (median, IQR) | walk_8s_m (median, IQR) | Seeds | Trust | Commit | Checkpoint |
 |---|---|---|---|---|---|---|---|---|
-| agibot/x2/v1_4_0 | 1.792 (0.000) | 85.504 (0.000) | 2.102 (0.000) | 4.585 (0.000) | 1 | verified | `6e07383` | [pending@pending](https://huggingface.co/pending/tree/pending) |
+| agibot/x2/v1_4_0 | 1.792 (0.000) | 85.504 (0.000) | 2.102 (0.000) | 4.585 (0.000) | 1 | verified | `9db7285` | [jeffliulab/yanshi-agibot-x2-v1_4_0@x2-flat-s42-a3](https://huggingface.co/jeffliulab/yanshi-agibot-x2-v1_4_0/tree/x2-flat-s42-a3) |
 
 ### velocity-rough
 
@@ -30,7 +30,7 @@ Exam: [`velocity-rough-straight-g1`](../gates/velocity-rough-straight-g1.yaml)
 
 | Robot | rough_low_20s_m (median, IQR) | rough_mid_20s_m (median, IQR) | Seeds | Trust | Commit | Checkpoint |
 |---|---|---|---|---|---|---|
-| unitree/g1/dof29 | 7.086 (0.000) | 0.161 (0.000) | 1 | verified | `b79df40` | [pending@pending](https://huggingface.co/pending/tree/pending) |
+| unitree/g1/dof29 | 7.086 (0.000) | 0.161 (0.000) | 1 | verified | `9db7285` | [jeffliulab/yanshi-unitree-g1-dof29@g1-rough-s3e2-exp2-s42](https://huggingface.co/jeffliulab/yanshi-unitree-g1-dof29/tree/g1-rough-s3e2-exp2-s42) |
 
 > Some subjects above are split across several exams. Numbers are comparable **within** an exam only:
 
