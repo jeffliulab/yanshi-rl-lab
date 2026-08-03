@@ -3,7 +3,7 @@
  "robot": "agibot/x2/v1_4_0",
  "task": "velocity-flat",
  "exam": "velocity-flat-x2",
- "commit": "6e07383",
+ "commit": "9db7285",
  "isaaclab_version": "2.3.2",
  "gpu": "RTX 5070 Ti 16GB",
  "seeds": [
@@ -24,11 +24,11 @@
   }
  },
  "checkpoint": {
-  "hf_repo": "pending",
-  "revision": "pending"
+  "hf_repo": "jeffliulab/yanshi-agibot-x2-v1_4_0",
+  "revision": "x2-flat-s42-a3"
  },
- "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-flat-x2.yaml --contract logs/rsl_rl/2026-07-31_07-32-30_yanshi-x2-flat-s42-a3/params/contract.json --policy logs/rsl_rl/2026-07-31_07-32-30_yanshi-x2-flat-s42-a3/exported/policy.onnx",
+ "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-flat-x2.yaml --hf jeffliulab/yanshi-agibot-x2-v1_4_0@x2-flat-s42-a3 --subdir velocity-flat",
  "trust_tier": "verified",
- "date": "2026-07-31",
- "notes": "Attempt 3 (D9: self_collisions=False vs vendor interpenetrating collision meshes), exam velocity-flat-x2.yaml (turn gates command wz=0.2 rad/s = trained cap). Single seed -- >=3-seed baseline rule and HF checkpoint hosting are deferred standards (see maintainer backlog); gates 4/4, no veto, human video inspection passed."
+ "date": "2026-08-03",
+ "notes": "Attempt 3 (D9: self_collisions=False vs vendor interpenetrating collision meshes), exam velocity-flat-x2.yaml (turn gates command wz=0.2 rad/s = trained cap). Gates 4/4, no veto, human video inspection passed. First measured 2026-07-31 on a commit that was later rewritten out of the branch and can no longer be resolved by anyone; re-measured 2026-08-03 at commit 9db7285 with the weights pulled from the published Hugging Face release and no token, giving the same numbers to every digit. Single seed -- the >=3-seed baseline rule is a deferred standard (see maintainer backlog)."
 }

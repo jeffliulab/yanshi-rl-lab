@@ -3,7 +3,7 @@
  "robot": "unitree/g1/dof29",
  "task": "velocity-rough",
  "exam": "velocity-rough-straight-g1",
- "commit": "b79df40",
+ "commit": "9db7285",
  "isaaclab_version": "2.3.2",
  "gpu": "RTX 5070 Ti 16GB",
  "seeds": [
@@ -18,11 +18,11 @@
   }
  },
  "checkpoint": {
-  "hf_repo": "pending",
-  "revision": "pending"
+  "hf_repo": "jeffliulab/yanshi-unitree-g1-dof29",
+  "revision": "g1-rough-s3e2-exp2-s42"
  },
- "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-rough-straight-g1.yaml --contract logs/rsl_rl/2026-08-01_04-07-20_s3e2-exp2-hdg025-s42/params/contract.json --policy logs/rsl_rl/2026-08-01_04-07-20_s3e2-exp2-hdg025-s42/exported/policy.onnx",
+ "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-rough-straight-g1.yaml --hf jeffliulab/yanshi-unitree-g1-dof29@g1-rough-s3e2-exp2-s42 --subdir velocity-rough",
  "trust_tier": "verified",
- "date": "2026-08-02",
- "notes": "S3-\u5b9e\u9a8c2 EXP-2 (track_heading_exp weight 0.25), blind rough walking, 20 s per gate; 1/2, no veto. Low band 7.09 m clears its 6.5 m line; the mid band freezes at 0.16 m against 5.0 m -- a standing policy, shown in that experiment to be unrelated to the heading term (weights 0.5, 0.25 and 0 all freeze). Terrain regenerable from scripts/tools/gen_rough_scenes.py (frozen seed 42; the height fields reproduce byte-identically). \u26a0\ufe0f The S3-\u5b9e\u9a8c2 card records 9.72 m for the low band: that was measured on a superseded terrain sample, generated before the scene parameters were finalised on 2026-08-01. Same policy ONNX (md5 verified identical); the verdict is unchanged, the number is not. Single seed."
+ "date": "2026-08-03",
+ "notes": "S3-\u5b9e\u9a8c2 EXP-2 (track_heading_exp weight 0.25), blind rough walking, 20 s per gate; 1/2, no veto. Low band 7.09 m clears its 6.5 m line; the mid band freezes at 0.16 m against 5.0 m -- a standing policy, shown in that experiment to be unrelated to the heading term (weights 0.5, 0.25 and 0 all freeze). Terrain regenerable from scripts/tools/gen_rough_scenes.py (frozen seed 42; the height fields reproduce byte-identically). \u26a0\ufe0f The S3-\u5b9e\u9a8c2 card records 9.72 m for the low band: that was measured on a superseded terrain sample, generated before the scene parameters were finalised on 2026-08-01. Same policy ONNX (md5 verified identical); the verdict is unchanged, the number is not. First measured 2026-08-02 at commit b79df40; re-measured 2026-08-03 at commit 9db7285 with the weights pulled from the published Hugging Face release and no token, giving the same numbers to every digit. Single seed."
 }

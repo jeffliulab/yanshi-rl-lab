@@ -3,7 +3,7 @@
  "robot": "berkeley/humanoid_lite/humanoid",
  "task": "velocity-flat",
  "exam": "velocity-flat-bhl",
- "commit": "b79df40",
+ "commit": "9db7285",
  "isaaclab_version": "2.3.2",
  "gpu": "RTX 5070 Ti 16GB",
  "seeds": [
@@ -24,11 +24,11 @@
   }
  },
  "checkpoint": {
-  "hf_repo": "pending",
-  "revision": "pending"
+  "hf_repo": "jeffliulab/yanshi-berkeley-humanoid_lite-humanoid",
+  "revision": "bhl-flat-s42-a3"
  },
- "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-flat-bhl.yaml --contract logs/rsl_rl/2026-08-01_00-27-00_yanshi-bhl-flat-s42-a3/params/contract.json --policy logs/rsl_rl/2026-08-01_00-27-00_yanshi-bhl-flat-s42-a3/exported/policy-9999.onnx",
+ "repro_command": "python scripts/sim2sim/run_gates.py --gates benchmark/gates/velocity-flat-bhl.yaml --hf jeffliulab/yanshi-berkeley-humanoid_lite-humanoid@bhl-flat-s42-a3 --subdir velocity-flat",
  "trust_tier": "verified",
- "date": "2026-08-02",
- "notes": "Attempt 3 (official HybridRobotics humanoid recipe transcribed verbatim); gates 2/4, no veto. It walks -- straight walk 2.75 m clears its 2.08 m line -- but both slow-command gates fail: the slow turn reaches 7.1 deg against a 45.8 deg line and the slow walk 0.02 m against 0.86 m. Diagnosis on record: the training command envelope (vx +-1.0, heading mode) is far wider than the exam points, so near-zero commands sit in a region the policy barely saw. Listed rather than withheld: a leaderboard that shows only passes reports by omission. Single seed."
+ "date": "2026-08-03",
+ "notes": "Attempt 3 (official HybridRobotics humanoid recipe transcribed verbatim); gates 2/4, no veto. It walks -- straight walk 2.75 m clears its 2.08 m line -- but both slow-command gates fail: the slow turn reaches 7.1 deg against a 45.8 deg line and the slow walk 0.02 m against 0.86 m. Diagnosis on record: the training command envelope (vx +-1.0, heading mode) is far wider than the exam points, so near-zero commands sit in a region the policy barely saw. Listed rather than withheld: a leaderboard that shows only passes reports by omission. First measured 2026-08-02 at commit b79df40; re-measured 2026-08-03 at commit 9db7285 with the weights pulled from the published Hugging Face release and no token, giving the same numbers to every digit. The release publishes the run's policy-9999.onnx under the layout's policy.onnx name; the two are byte-identical. Single seed."
 }
